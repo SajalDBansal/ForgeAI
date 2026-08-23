@@ -1,0 +1,90 @@
+# Production-style stack: database + built web/api images.
+# Build & run with:
+#   docker compose -f docker-compose.prod.yml up --build
+#
+# DATABASE_URL is deliberately NOT read from the root .env here: that file's
+# value points at `localhost` for host-side `bun dev`, which does not resolve
+# to the `db` service from inside a container. It's built from the
+# POSTGRES_* vars instead, targeting the `db` service by name.
+name: turbo-starter-prod
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-starter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-starter}
+      POSTGRES_DB: ${POSTGRES_DB:-turbo_starter}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-starter}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  api-fast:
+    build:
+      context: .
+      dockerfile: ./apps/api-fast/Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+        NEXT_PUBLIC_API_HOST: ${NEXT_PUBLIC_API_HOST:-http://localhost:3001}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-starter}:${POSTGRES_PASSWORD:-starter}@db:5432/${POSTGRES_DB:-turbo_starter}?schema=public
+      NEXT_PUBLIC_API_HOST: ${NEXT_PUBLIC_API_HOST:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
