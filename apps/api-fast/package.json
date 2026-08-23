@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "@fastify/cors": "11.3.0",
-    "@repo/database": "*",
+    "@forgeAI/database": "*",
     "dotenv": "17.4.2",
     "fastify": "5.12.1"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
+    "@forgeAI/eslint-config": "*",
+    "@forgeAI/typescript-config": "*",
     "@types/node": "26.4.0",
     "eslint": "9.39.5",
     "tsx": "4.23.13",

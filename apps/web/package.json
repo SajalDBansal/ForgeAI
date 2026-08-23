@@ -13,8 +13,8 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@repo/database": "*",
-    "@repo/ui": "*",
+    "@forgeAI/database": "*",
+    "@forgeAI/ui": "*",
     "lucide-react": "1.38.0",
     "next": "16.3.3",
     "next-themes": "0.4.6",
@@ -22,8 +22,8 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
+    "@forgeAI/eslint-config": "*",
+    "@forgeAI/typescript-config": "*",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.4.0",
     "@types/react": "19.2.18",

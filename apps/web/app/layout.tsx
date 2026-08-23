@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import "@repo/ui/globals.css"
+import "@forgeAI/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
