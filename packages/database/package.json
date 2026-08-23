@@ -1,5 +1,5 @@
 {
-  "name": "@repo/database",
+  "name": "@forgeAI/database",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -29,8 +29,8 @@
     "pg": "8.23.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
+    "@forgeAI/eslint-config": "*",
+    "@forgeAI/typescript-config": "*",
     "@types/node": "26.4.0",
     "@types/pg": "8.23.1",
     "eslint": "9.39.5",
