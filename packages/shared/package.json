@@ -1,0 +1,19 @@
+{
+  "name": "@forgeAI/shared",
+  "module": "index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@forgeAI/typescript-config": "*",
+    "import": "^0.0.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}
