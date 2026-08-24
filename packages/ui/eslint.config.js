@@ -1,4 +1,4 @@
-import { reactInternalConfig } from "@repo/eslint-config/react-internal"
+import { reactInternalConfig } from "@forgeAI/eslint-config/react-internal"
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [...reactInternalConfig]
