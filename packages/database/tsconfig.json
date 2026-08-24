@@ -1,8 +1,15 @@
 {
-  "extends": "@repo/typescript-config/node-library.json",
+  "extends": "@forgeAI/typescript-config/node-library.json",
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src", "prisma.config.ts"],
-  "exclude": ["node_modules", "dist", "generated"]
+  "include": [
+    "src",
+    "prisma.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "generated"
+  ]
 }

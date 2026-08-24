@@ -1,4 +1,9 @@
 {
-  "extends": "@repo/typescript-config/base.json",
-  "exclude": ["node_modules", "**/dist", "**/.next", "**/.turbo"]
+  "extends": "@forgeAI/typescript-config/base.json",
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/.next",
+    "**/.turbo"
+  ]
 }
