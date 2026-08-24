@@ -11,21 +11,226 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id
+  name          String
+  email         String
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  collaborators Collaborator[]
+  connections   Connection[]
+  workspaces    Workspace[]
+
+  @@unique([email])
+  @@map("user")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  issuer                String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId], map: "account_providerId_accountId_uidx")
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// --------------- COLLABORATORS ---------------
+enum CollaboratorRole {
+  EDITOR
+  VIEWER
+}
+
+model Collaborator {
+  id          String           @id @default(cuid())
+  role        CollaboratorRole
+  userId      String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --------------- CONNECTIONS ---------------
+enum ConnectionProvider {
+  GITHUB
+  VERCEL
+  RENDER
+  SUPABASE
+}
+
+enum ConnectionStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+}
+
+model Connection {
+  id                   String             @id @default(cuid())
+  userId               String
+  provider             ConnectionProvider
+  status               ConnectionStatus   @default(CONNECTED)
+  externalAccountId    String
+  externalAccountLogin String
+  accessTokenEnc       String?
+  refreshTokenEnc      String?
+  expiresAt            DateTime?
+  scopes               String[]
+  settingsJson         Json
+  createdByUserId      String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repoRefs     RepoRef[]
+  projectLinks ProjectConnection[]
+
+  @@unique([userId, provider])
+}
+
+// --------------- WORKSPACE ---------------
+model Workspace {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleteable  Boolean   @default(true)
+  archivedAt  DateTime?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projects      Project[]
+  collaborators Collaborator[]
+
+  @@index([name])
+  @@index([userId])
+}
+
+// --------------- PROJECT ---------------
+enum ProjectStatus {
+  BUILDING
+  READY
+  PLANNING
+  NEEDS_INPUT
+}
+
+enum ProjectMode {
+  BUILD
+  PLAN
+}
+
+enum ProjectSource {
+  GITHUB
+  MANUAL
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  initialPrompt String
+  status        ProjectStatus
+  starred       Boolean       @default(false)
+  stack         String[]
+  mode          ProjectMode
+  source        ProjectSource
+  repoId        String?
+  workspaceId   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastUsed      DateTime      @default(now())
+  archivedAt    DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repo      RepoRef?  @relation(fields: [repoId], references: [id], onDelete: SetNull)
+
+  connections ProjectConnection[]
+
+  @@index([workspaceId])
+}
+
+// --------------- CONNECTORS ---------------
+model RepoRef {
+  id           String      @id @default(cuid())
+  owner        String
+  name         String
+  branch       String
+  connectionId String?
+  connection   Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  projects Project[]
+
+  @@index([connectionId])
+}
+
+model ProjectConnection {
+  id           String             @id @default(cuid())
+  projectId    String
+  connectionId String
+  provider     ConnectionProvider
+  createdAt    DateTime           @default(now())
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  connection Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, provider])
+  @@index([connectionId])
+}
+
+// --------------- TEMPLATES ---------------
+model Template {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  tag             String
+  version         String
+  storageRef      String
+  metadata        Json
+  previewImageUrl String?
+  createdAt       DateTime @default(now())
 }
