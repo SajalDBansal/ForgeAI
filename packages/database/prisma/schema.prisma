@@ -11,18 +11,19 @@ datasource db {
 }
 
 model User {
-  id            String         @id
-  name          String
-  email         String
-  emailVerified Boolean        @default(false)
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  collaborators Collaborator[]
-  connections   Connection[]
-  workspaces    Workspace[]
+  id              String         @id
+  name            String
+  email           String
+  emailVerified   Boolean        @default(false)
+  image           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  collaborators   Collaborator[]
+  connections     Connection[]
+  workspaces      Workspace[]
+  sentInvitations Invitation[]   @relation("InvitationInviter")
 
   @@unique([email])
   @@map("user")
@@ -93,6 +94,34 @@ model Collaborator {
   workspaceId String
   workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+model Invitation {
+  id              String           @id @default(cuid())
+  email           String
+  role            CollaboratorRole
+  status          InvitationStatus @default(PENDING)
+  token           String           @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  workspaceId     String
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedByUserId String
+  invitedBy       User             @relation("InvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@index([email])
 }
 
 // --------------- CONNECTIONS ---------------
@@ -146,6 +175,8 @@ model Workspace {
 
   projects      Project[]
   collaborators Collaborator[]
+  templates     Template[]
+  invitations   Invitation[]
 
   @@index([name])
   @@index([userId])
@@ -229,8 +260,18 @@ model Template {
   description     String
   tag             String
   version         String
+  author          String
+  license         String
+  uses            Int      @default(0)
   storageRef      String
-  metadata        Json
   previewImageUrl String?
+  metadata        Json
   createdAt       DateTime @default(now())
+
+  /// null means the template is public; otherwise it is private to one workspace.
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([tag])
+  @@index([workspaceId])
 }
