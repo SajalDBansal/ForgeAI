@@ -15,8 +15,11 @@
   "dependencies": {
     "@fastify/cors": "11.3.0",
     "@forgeAI/database": "*",
+    "@forgeAI/shared": "*",
+    "better-auth": "^1.7.3",
     "dotenv": "17.4.2",
-    "fastify": "5.12.1"
+    "fastify": "5.12.1",
+    "resend": "^6.26.0"
   },
   "devDependencies": {
     "@forgeAI/eslint-config": "*",

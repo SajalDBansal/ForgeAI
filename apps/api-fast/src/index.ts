@@ -1,8 +1,9 @@
 import "dotenv/config"
 
 import { createServer } from "./server.js"
+import { ENV_CONFIG } from "./lib/envConfig.js"
 
-const port = process.env.PORT ? Number(process.env.PORT) : 3002
+const port = ENV_CONFIG.PORT ? Number(ENV_CONFIG.PORT) : 3002
 
 const app = await createServer()
 
