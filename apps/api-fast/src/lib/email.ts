@@ -4,7 +4,8 @@ import { ENV_CONFIG } from "./envConfig.js"
 
 const resend = new Resend(ENV_CONFIG.RESEND_API_KEY)
 
-export async function sendResetPasswordEmail(to: string, url: string): Promise<void> {
+export async function sendResetPasswordEmail(to: string, token: string): Promise<void> {
+    const url = `${ENV_CONFIG.CLIENT_ORIGIN}/reset-password?token=${encodeURIComponent(token)}`
     const { error } = await resend.emails.send({
         from: ENV_CONFIG.EMAIL_FROM,
         to,
@@ -63,7 +64,8 @@ export async function sendWorkspaceInvitationEmail({ to, workspaceName, invitedB
     }
 }
 
-export async function sendVerificationEmail(to: string, url: string): Promise<void> {
+export async function sendVerificationEmail(to: string, token: string): Promise<void> {
+    const url = `${ENV_CONFIG.CLIENT_ORIGIN}/verify-email?token=${encodeURIComponent(token)}`
     const { error } = await resend.emails.send({
         from: ENV_CONFIG.EMAIL_FROM,
         to,

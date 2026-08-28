@@ -25,22 +25,18 @@ export const auth = betterAuth({
 
     emailAndPassword: {
         enabled: true,
-        // Pending workspace invitations are redeemed by email address, so an
-        // unverified address must not be able to claim someone else's invites.
         requireEmailVerification: true,
-        sendResetPassword: async ({ user, url }) => {
-            await sendResetPasswordEmail(user.email, url);
+        sendResetPassword: async ({ user, token }) => {
+            await sendResetPasswordEmail(user.email, token);
         },
     },
 
     emailVerification: {
         sendOnSignUp: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            await sendVerificationEmail(user.email, url);
+        sendOnSignIn: true,
+        sendVerificationEmail: async ({ user, token }) => {
+            await sendVerificationEmail(user.email, token);
         },
-        // Email/password users are unverified at signup, so this is where their
-        // invitations get redeemed. Social logins arrive verified and redeem in the
-        // user-create hook below.
         onEmailVerification: async (user: { id: string; email: string }) => {
             await redeemPendingInvitations(user);
         },
