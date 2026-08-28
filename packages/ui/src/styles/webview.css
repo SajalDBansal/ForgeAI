@@ -1,0 +1,252 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@source "../components/**/*.{ts,tsx}";
+@source "../hooks/**/*.{ts,tsx}";
+@source "../lib/**/*.{ts,tsx}";
+@source "../../../../apps/web/**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-full: 9999px;
+
+  --color-canvas: var(--canvas);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-card: var(--surface-card);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-elevated: var(--surface-dark-elevated);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-charcoal: var(--charcoal);
+  --color-body: var(--body);
+  --color-mute: var(--mute);
+  --color-stone: var(--stone);
+  --color-ash: var(--ash);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-surface: var(--on-dark-surface);
+  --color-ash-dark-surface: var(--ash-dark-surface);
+  --color-on-primary: var(--on-primary);
+
+  --color-info: var(--accent);
+  --color-info-hover: var(--accent-hover);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+
+  /* shadcn aliases */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  /* shadcn's structural hover/focus slot — kept neutral so it never
+     collides with the brand's blue --accent (exposed separately as --color-info) */
+  --color-accent: var(--surface-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 4px;
+
+  /* Brand canvas */
+  --canvas: #fdfcfc;
+  --surface-soft: #f8f7f7;
+  --surface-card: #f1eeee;
+  --surface-dark: #201d1d;
+  --surface-dark-elevated: #302c2c;
+  --hairline: rgba(15, 0, 0, 0.28);
+  --hairline-strong: #646262;
+
+  --ink: #201d1d;
+  --ink-deep: #0f0000;
+  --charcoal: #302c2c;
+  --body: #424245;
+  --mute: #646262;
+  --stone: #6e6e73;
+  --ash: #9a9898;
+  --on-dark: #fdfcfc;
+  /* Text/icon color for content on the permanently-dark IDE surfaces (code editor,
+     terminal, deploy log) — surface-dark stays dark in both themes, so this must
+     stay light in both themes too. Deliberately NOT redefined under .dark. */
+  --on-dark-surface: #fdfcfc;
+  /* Muted companion to --on-dark-surface — same reasoning, deliberately not
+     redefined under .dark. */
+  --ash-dark-surface: #9a9898;
+  --on-primary: #fdfcfc;
+
+  --accent: #007aff;
+  --accent-hover: #0056b3;
+  --danger: #ff3b30;
+  --warning: #ff9f0a;
+  --success: #30d158;
+
+  /* shadcn semantic mappings to brand */
+  --background: #fdfcfc;
+  --foreground: #201d1d;
+  --card: #fdfcfc;
+  --card-foreground: #201d1d;
+  --popover: #fdfcfc;
+  --popover-foreground: #201d1d;
+  --primary: #201d1d;
+  --primary-foreground: #fdfcfc;
+  --secondary: #f1eeee;
+  --secondary-foreground: #201d1d;
+  --muted: #f8f7f7;
+  --muted-foreground: #646262;
+  --accent-foreground: #201d1d;
+  --destructive: #ff3b30;
+  --destructive-foreground: #fdfcfc;
+  --border: rgba(15, 0, 0, 0.28);
+  --input: rgba(15, 0, 0, 0.28);
+  --ring: #201d1d;
+}
+
+.dark {
+  --canvas: #131111;
+  --surface-soft: #1a1818;
+  --surface-card: #221f1f;
+  --surface-dark: #1a1818;
+  --surface-dark-elevated: #262323;
+  --hairline: rgba(253, 252, 252, 0.12);
+  --hairline-strong: #8a8686;
+
+  --ink: #f0eeee;
+  --ink-deep: #fdfcfc;
+  --charcoal: #d9d6d6;
+  --body: #c9c6c6;
+  --mute: #9a9898;
+  --stone: #8a8686;
+  --ash: #6e6c6c;
+  --on-dark: #201d1d;
+  --on-primary: #201d1d;
+
+  --background: #131111;
+  --foreground: #f0eeee;
+  --card: #131111;
+  --card-foreground: #f0eeee;
+  --popover: #1a1818;
+  --popover-foreground: #f0eeee;
+  --primary: #f0eeee;
+  --primary-foreground: #201d1d;
+  --secondary: #221f1f;
+  --secondary-foreground: #f0eeee;
+  --muted: #1a1818;
+  --muted-foreground: #9a9898;
+  --accent-foreground: #f0eeee;
+  --destructive-foreground: #f0eeee;
+  --border: rgba(253, 252, 252, 0.12);
+  --input: rgba(253, 252, 252, 0.12);
+  --ring: #f0eeee;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
+
+  html {
+    font-size: 90%;
+  }
+
+  html,
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "calt";
+  }
+
+  ::selection {
+    background: var(--ink);
+    color: var(--on-dark);
+  }
+}
+
+@utility hairline-b {
+  border-bottom: 1px solid var(--hairline);
+}
+
+@utility hairline-t {
+  border-top: 1px solid var(--hairline);
+}
+
+@utility hairline-r {
+  border-right: 1px solid var(--hairline);
+}
+
+@utility hairline-l {
+  border-left: 1px solid var(--hairline);
+}
+
+/* Scrollbars in dark surfaces */
+.dark-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark-scroll::-webkit-scrollbar-thumb {
+  background: #3a3636;
+  border-radius: 4px;
+}
+
+.dark-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret-blink::after {
+  content: "▋";
+  animation: blink 1s steps(1) infinite;
+  margin-left: 2px;
+}
