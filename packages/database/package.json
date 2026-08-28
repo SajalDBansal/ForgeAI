@@ -31,6 +31,7 @@
   "devDependencies": {
     "@forgeAI/eslint-config": "*",
     "@forgeAI/typescript-config": "*",
+    "better-auth": "1.7.3",
     "@types/node": "26.4.0",
     "@types/pg": "8.23.1",
     "eslint": "9.39.5",
