@@ -1,6 +1,5 @@
 import z from "zod";
 
-/** `stack` and `deps` share a shape: a named package pinned to a version. */
 export const templatePackageSchema = z.object({
     name: z.string().trim().min(1, "Enter the package name"),
     version: z.string().trim().min(1, "Enter the package version"),

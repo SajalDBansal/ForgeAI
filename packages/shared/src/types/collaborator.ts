@@ -15,7 +15,6 @@ export type Collaborator = {
     updatedAt: Date;
 }
 
-/** A collaborator joined with the profile fields the UI needs to render its row. */
 export type WorkspaceCollaborator = {
     id: string;
     role: CollaboratorRole;
@@ -28,10 +27,11 @@ export type WorkspaceCollaborator = {
     };
 }
 
-/**
- * A pending invite for an email address with no account yet. The token is a bearer
- * credential that only ever travels by email, so it is absent from this shape.
- */
+export type AccountCollaborator = WorkspaceCollaborator & {
+    workspaceId: string;
+    workspaceName: string;
+}
+
 export type WorkspaceInvitation = {
     id: string;
     email: string;
@@ -43,10 +43,6 @@ export type WorkspaceInvitation = {
     createdAt: Date;
 }
 
-/**
- * What the invite landing page may show before sign-in. Anyone holding the link can
- * read this, so it carries no email address and nothing else identifying.
- */
 export type InvitationPreview = {
     workspaceName: string;
     invitedByName: string;

@@ -42,7 +42,7 @@ export type Template = {
     workspaceId: string | null;
 }
 
-export type TemplateListItem = Pick<Template, "id" | "name" | "tag" | "description" | "storageRef" | "previewImageUrl">
+export type TemplateListItem = Pick<Template, "id" | "name" | "tag" | "description" | "storageRef" | "previewImageUrl" | "workspaceId">
 
 export type TemplateInfo = Omit<Template, "metadata"> & TemplateMetadata
 

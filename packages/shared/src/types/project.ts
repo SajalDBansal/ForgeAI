@@ -1,8 +1,10 @@
 import z from "zod";
-import { createProjectSchema } from "../validations/project.js";
+import { createProjectSchema, updateProjectSchema } from "../validations/project.js";
 import { ProjectMode, ProjectSource, ProjectStatus } from "./enum.js";
 
 export type CreateProjectDataType = z.infer<typeof createProjectSchema>
+
+export type UpdateProjectDataType = z.infer<typeof updateProjectSchema>
 
 export type Project = {
     name: string;
