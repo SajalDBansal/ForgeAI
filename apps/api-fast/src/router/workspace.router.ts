@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { archiveWorkspaceHandler, createWorkspaceHandler, deleteWorkspaceHandler, getWorkspaceHandler, updateWorkspaceHandler } from "../controller/workspace.controller.js";
+import { archiveWorkspaceHandler, createWorkspaceHandler, deleteWorkspaceHandler, getWorkspaceHandler, restoreWorkspaceHandler, updateWorkspaceHandler } from "../controller/workspace.controller.js";
 import { inviteWorkspaceCollaboratorHandler, listWorkspaceCollaboratorsHandler, removeWorkspaceCollaboratorHandler, updateWorkspaceCollaboratorRoleHandler } from "../controller/collaborator.controller.js";
 import { listWorkspaceInvitationsHandler, resendInvitationHandler, revokeInvitationHandler } from "../controller/invitation.controller.js";
 
@@ -8,6 +8,7 @@ export async function workspaceRouter(app: FastifyInstance): Promise<void> {
     app.get("/:id", getWorkspaceHandler)
     app.patch("/:id", updateWorkspaceHandler)
     app.post("/:id/archive", archiveWorkspaceHandler)
+    app.post("/:id/restore", restoreWorkspaceHandler)
     app.delete("/:id", deleteWorkspaceHandler)
 
     app.get("/:id/collaborators", listWorkspaceCollaboratorsHandler)

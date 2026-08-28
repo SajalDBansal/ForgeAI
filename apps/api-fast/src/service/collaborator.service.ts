@@ -1,8 +1,8 @@
 import { prisma } from "@forgeAI/database"
-import { CollaboratorRole, InviteCollaboratorDataType, WorkspaceCollaborator, WorkspaceInvitation } from "@forgeAI/shared"
+import { AccountCollaborator, CollaboratorRole, InviteCollaboratorDataType, WorkspaceCollaborator, WorkspaceInvitation } from "@forgeAI/shared"
 import { sendWorkspaceAccessGrantedEmail } from "../lib/email.js"
 import { createOrRefreshInvitation, trySendInviteEmail } from "./invitation.service.js"
-import { collaboratorSelect, findOwnedWorkspace, workspaceAccessFilter } from "./workspace.service.js"
+import { collaboratorSelect, findOwnedWorkspace, workspaceAccessFilter, workspaceMembershipFilter } from "./workspace.service.js"
 
 export type WorkspaceCollaboratorListResult =
     | { ok: true; collaborators: WorkspaceCollaborator[] }
@@ -20,16 +20,21 @@ export async function listWorkspaceCollaborators(userId: string, workspaceId: st
     return { ok: true, collaborators }
 }
 
+export async function listAccountCollaborators(userId: string): Promise<AccountCollaborator[]> {
+    const rows = await prisma.collaborator.findMany({
+        where: { workspace: workspaceMembershipFilter(userId) },
+        select: { ...collaboratorSelect, workspaceId: true, workspace: { select: { name: true } } },
+        orderBy: [{ workspaceId: "asc" }, { createdAt: "asc" }],
+    })
+
+    return rows.map(({ workspace, ...row }) => ({ ...row, workspaceName: workspace.name }))
+}
+
 export type InviteWorkspaceCollaboratorResult =
     | { ok: true; kind: "collaborator"; collaborator: WorkspaceCollaborator; emailSent: boolean }
     | { ok: true; kind: "invitation"; invitation: WorkspaceInvitation; emailSent: boolean }
     | { ok: false; reason: "workspace_not_found" | "already_collaborator" | "already_invited" }
 
-/**
- * Two branches by design: an address that already has an account becomes a
- * collaborator immediately, while an unknown address gets a pending Invitation that
- * redeemPendingInvitations turns into access the moment they sign up.
- */
 export async function inviteWorkspaceCollaborator(userId: string, workspaceId: string, input: InviteCollaboratorDataType): Promise<InviteWorkspaceCollaboratorResult> {
     const workspace = await findOwnedWorkspace(userId, workspaceId)
     if (!workspace) return { ok: false, reason: "workspace_not_found" }
@@ -39,7 +44,6 @@ export async function inviteWorkspaceCollaborator(userId: string, workspaceId: s
     const invitee = await prisma.user.findUnique({ where: { email: input.email }, select: { id: true } })
 
     if (invitee) {
-        // The owner already has full access, so they can't also be a collaborator.
         if (invitee.id === workspace.userId) return { ok: false, reason: "already_collaborator" }
 
         const existing = await prisma.collaborator.findFirst({

@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { authRouter } from "./auth.router.js";
+import { collaboratorRouter } from "./collaborator.router.js";
 import { healthRouter } from "./health.router.js";
 import { inviteRouter } from "./invite.router.js";
 import { metadataRouter } from "./metadata.router.js";
@@ -9,6 +10,7 @@ import { workspaceRouter } from "./workspace.router.js";
 
 export async function v1Routers(app: FastifyInstance): Promise<void> {
     await app.register(authRouter, { prefix: "/auth" });
+    await app.register(collaboratorRouter, { prefix: "/collaborator" });
     await app.register(healthRouter, { prefix: "/health" });
     await app.register(inviteRouter, { prefix: "/invite" });
     await app.register(metadataRouter, { prefix: "/metadata" });

@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { updateWorkspaceSchema } from "@forgeAI/shared";
 import { requireSession } from "../lib/session.js";
-import { archiveWorkspace, createWorkspace, deleteWorkspace, getWorkspaceDetail, updateWorkspace } from "../service/workspace.service.js";
+import { archiveWorkspace, createWorkspace, deleteWorkspace, getWorkspaceDetail, restoreWorkspace, updateWorkspace } from "../service/workspace.service.js";
 
 interface CreateWorkspaceBody {
     name?: string
@@ -61,6 +61,17 @@ export async function archiveWorkspaceHandler(request: FastifyRequest<{ Params: 
             return reply.status(404).send({ error: "Workspace not found" })
         }
         return reply.status(400).send({ error: "This workspace can't be archived" })
+    }
+    return result.workspace
+}
+
+export async function restoreWorkspaceHandler(request: FastifyRequest<{ Params: WorkspaceParams }>, reply: FastifyReply) {
+    const session = await requireSession(request, reply)
+    if (!session) return
+
+    const result = await restoreWorkspace(session.user.id, request.params.id)
+    if (!result.ok) {
+        return reply.status(404).send({ error: "Workspace not found" })
     }
     return result.workspace
 }

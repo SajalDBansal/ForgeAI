@@ -1,7 +1,6 @@
 import { prisma } from "@forgeAI/database";
 import { UpdateWorkspaceDataType, Workspace, WorkspaceDetail } from "@forgeAI/shared";
 
-/** The profile fields a collaborator row exposes — never the whole user record. */
 export const collaboratorSelect = {
     id: true,
     role: true,
@@ -9,15 +8,14 @@ export const collaboratorSelect = {
     user: { select: { id: true, name: true, email: true, image: true } },
 } as const
 
-/** Every non-archived workspace the user owns or collaborates on. */
-export function visibleWorkspacesFilter(userId: string) {
-    return { archivedAt: null, OR: [{ userId }, { collaborators: { some: { userId } } }] }
+export function workspaceMembershipFilter(userId: string) {
+    return { OR: [{ userId }, { collaborators: { some: { userId } } }] }
 }
 
-/**
- * Owners get full access; collaborators get read access. Mutating routes stay on
- * findOwnedWorkspace so only the owner can rename, archive, delete or manage collaborators.
- */
+export function visibleWorkspacesFilter(userId: string) {
+    return { archivedAt: null, ...workspaceMembershipFilter(userId) }
+}
+
 export function workspaceAccessFilter(userId: string, workspaceId: string) {
     return {
         id: workspaceId,
@@ -60,6 +58,17 @@ export async function archiveWorkspace(userId: string, workspaceId: string): Pro
         data: { archivedAt: new Date() },
     })
     return { ok: true, workspace: archived }
+}
+
+export async function restoreWorkspace(userId: string, workspaceId: string): Promise<WorkspaceMutationResult> {
+    const workspace = await findOwnedWorkspace(userId, workspaceId)
+    if (!workspace) return { ok: false, reason: "not_found" }
+
+    const restored = await prisma.workspace.update({
+        where: { id: workspaceId },
+        data: { archivedAt: null },
+    })
+    return { ok: true, workspace: restored }
 }
 
 export async function deleteWorkspace(userId: string, workspaceId: string): Promise<WorkspaceMutationResult> {

@@ -94,8 +94,6 @@ export async function revokeInvitation(userId: string, workspaceId: string, invi
         select: { id: true, status: true },
     })
     if (!existing) return { ok: false, reason: "invitation_not_found" }
-    // An accepted invite already became access, so revoking it would look like the
-    // collaborator was removed without actually removing them.
     if (existing.status === "ACCEPTED") return { ok: false, reason: "not_pending" }
 
     const invitation = await prisma.invitation.update({
@@ -173,8 +171,6 @@ export async function acceptInvitation(user: { id: string; email: string }, toke
     if (invitation.status !== "PENDING" || invitation.expiresAt <= new Date()) {
         return { ok: false, reason: "not_pending" }
     }
-    // Holding the link is not enough: the invite was addressed to one person, so the
-    // signed-in account has to be that address rather than whoever opened the email.
     if (invitation.email !== user.email) return { ok: false, reason: "email_mismatch" }
 
     await prisma.$transaction([

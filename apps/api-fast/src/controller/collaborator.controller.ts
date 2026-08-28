@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify"
 import { inviteCollaboratorSchema, updateCollaboratorRoleSchema } from "@forgeAI/shared"
 import { requireSession } from "../lib/session.js"
-import { inviteWorkspaceCollaborator, listWorkspaceCollaborators, removeWorkspaceCollaborator, updateWorkspaceCollaboratorRole } from "../service/collaborator.service.js"
+import { inviteWorkspaceCollaborator, listAccountCollaborators, listWorkspaceCollaborators, removeWorkspaceCollaborator, updateWorkspaceCollaboratorRole } from "../service/collaborator.service.js"
 
 interface WorkspaceParams {
     id: string
@@ -9,6 +9,13 @@ interface WorkspaceParams {
 
 interface WorkspaceCollaboratorParams extends WorkspaceParams {
     userId: string
+}
+
+export async function listAccountCollaboratorsHandler(request: FastifyRequest, reply: FastifyReply) {
+    const session = await requireSession(request, reply)
+    if (!session) return
+
+    return listAccountCollaborators(session.user.id)
 }
 
 export async function listWorkspaceCollaboratorsHandler(request: FastifyRequest<{ Params: WorkspaceParams }>, reply: FastifyReply) {
@@ -46,8 +53,6 @@ export async function inviteWorkspaceCollaboratorHandler(request: FastifyRequest
         request.log.error({ workspaceId: request.params.id, kind: result.kind }, "invite email delivery failed")
     }
 
-    // Both branches are a success; kind tells the client whether the person now has
-    // access or still has to sign up before the invite turns into access.
     return reply.status(201).send(
         result.kind === "collaborator"
             ? { kind: result.kind, collaborator: result.collaborator, emailSent: result.emailSent }

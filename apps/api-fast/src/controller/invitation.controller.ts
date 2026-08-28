@@ -70,7 +70,6 @@ export async function resendInvitationHandler(request: FastifyRequest<{ Params: 
     return result.invitation
 }
 
-/** Unauthenticated: this is what the emailed link opens before the invitee signs up. */
 export async function getInvitationPreviewHandler(request: FastifyRequest<{ Params: TokenParams }>, reply: FastifyReply) {
     const result = await getInvitationPreview(request.params.token)
     if (!result.ok) {

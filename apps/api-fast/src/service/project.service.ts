@@ -1,5 +1,5 @@
 import { prisma } from "@forgeAI/database"
-import { CreateProjectDataType, Project, projectNameFromPrompt, ProjectSource } from "@forgeAI/shared"
+import { CreateProjectDataType, Project, projectNameFromPrompt, ProjectSource, UpdateProjectDataType } from "@forgeAI/shared"
 import { findOwnedWorkspace } from "./workspace.service.js"
 import { getConnection } from "./connections/index.js"
 
@@ -69,6 +69,31 @@ export async function archiveProject(userId: string, projectId: string): Promise
         data: { archivedAt: new Date() },
     })
     return { ok: true, project: archived }
+}
+
+export async function restoreProject(userId: string, projectId: string): Promise<ProjectMutationResult> {
+    const project = await findOwnedProject(userId, projectId)
+    if (!project) return { ok: false, reason: "not_found" }
+
+    const restored = await prisma.project.update({
+        where: { id: projectId },
+        data: { archivedAt: null },
+    })
+    return { ok: true, project: restored }
+}
+
+export async function updateProject(userId: string, projectId: string, input: UpdateProjectDataType): Promise<ProjectMutationResult> {
+    const project = await findOwnedProject(userId, projectId)
+    if (!project) return { ok: false, reason: "not_found" }
+
+    const updated = await prisma.project.update({
+        where: { id: projectId },
+        data: {
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.description !== undefined && { description: input.description }),
+        },
+    })
+    return { ok: true, project: updated }
 }
 
 export async function deleteProject(userId: string, projectId: string): Promise<ProjectMutationResult> {

@@ -2,7 +2,6 @@ import { prisma } from "@forgeAI/database"
 import { TemplateInfo, TemplateListItem, toTemplateInfo } from "@forgeAI/shared"
 import { visibleWorkspacesFilter } from "./workspace.service.js"
 
-/** Exactly the columns the gallery needs — metadata and storage internals stay out. */
 const templateListSelect = {
     id: true,
     name: true,
@@ -10,12 +9,9 @@ const templateListSelect = {
     description: true,
     storageRef: true,
     previewImageUrl: true,
+    workspaceId: true,
 } as const
 
-/**
- * Curated templates (workspaceId null) plus the private ones belonging to any
- * workspace the user owns or collaborates on.
- */
 function visibleTemplatesFilter(userId: string) {
     return {
         OR: [{ workspaceId: null }, { workspace: visibleWorkspacesFilter(userId) }],
