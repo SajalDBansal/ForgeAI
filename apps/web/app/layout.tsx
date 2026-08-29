@@ -4,8 +4,8 @@ import "@forgeAI/ui/styles/webview.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@forgeAI/ui/components/tooltip"
 import { Toaster } from "@forgeAI/ui/components/sonner"
-// import { ShortcutsProvider } from "@/components/shortcuts-provider"
-// import { AppMetadataProvider } from "@/components/app-metadata-provider"
+import { ShortcutsProvider } from "@/components/shortcuts-provider"
+import { AppMetadataProvider } from "@/components/app-metadata-provider"
 
 export const metadata: Metadata = {
   title: "ForgeAI — the AI coding agent workspace",
@@ -43,11 +43,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delayDuration={200}>
-            {/* <AppMetadataProvider> */}
-            {children}
-            {/* </AppMetadataProvider> */}
+            <AppMetadataProvider>{children}</AppMetadataProvider>
           </TooltipProvider>
-          {/* <ShortcutsProvider /> */}
+          <ShortcutsProvider />
           <Toaster position="bottom-right" />
         </ThemeProvider>
       </body>

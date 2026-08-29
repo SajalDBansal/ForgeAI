@@ -23,7 +23,6 @@ export function AuthShell({
           <Link href="/templates" className="text-[11px] uppercase tracking-widest text-mute hover:text-ink">Templates</Link>
         </div>
 
-        {/* Live agent session window */}
         <div className="mt-12 border border-hairline rounded-sm bg-canvas overflow-hidden shadow-[0_10px_40px_-20px_rgba(15,0,0,0.25)]">
           <div className="flex items-center gap-2 px-3 h-8 hairline-b bg-surface-soft">
             <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />
@@ -56,7 +55,6 @@ export function AuthShell({
           </pre>
         </div>
 
-        {/* Feature highlights */}
         <div className="mt-8 grid grid-cols-2 gap-4">
           {[
             { k: "plan + build", v: "Describe it; the agent plans and scaffolds." },

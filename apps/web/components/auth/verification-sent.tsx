@@ -10,12 +10,6 @@ import { authClient } from "@/lib/auth-client"
 
 const RESEND_COOLDOWN_SECONDS = 30
 
-/**
- * Shown in place of the signup form once the account exists but the address is
- * still unverified — sign-in is blocked until then (api-fast sets
- * `requireEmailVerification`), so this is the end of the signup flow, not a
- * detour.
- */
 export function VerificationSent({ email }: { email: string }) {
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS)

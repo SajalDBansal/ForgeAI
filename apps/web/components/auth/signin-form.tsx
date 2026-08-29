@@ -25,8 +25,6 @@ export function SigninForm() {
     const { error } = await authClient.signIn.email({ email, password: pw })
     setLoading(false)
     if (error) {
-      // api-fast blocks unverified addresses with a 403 and re-sends the
-      // verification email, so send the user to the same waiting state signup uses.
       if (error.status === 403) {
         setUnverified(email)
         return

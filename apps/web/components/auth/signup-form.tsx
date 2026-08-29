@@ -28,8 +28,6 @@ export function SignupForm() {
       toast.error(error.message ?? "Couldn't create your workspace. Try a different email.")
       return
     }
-    // api-fast requires a verified address before the first sign-in, so signup
-    // ends here rather than in an authenticated session.
     setSentTo(email)
   }
 
