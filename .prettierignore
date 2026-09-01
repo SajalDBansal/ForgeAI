@@ -6,3 +6,10 @@ build
 generated
 coverage
 bun.lock
+.venv
+.pytest_cache
+.ruff_cache
+.tmp
+*.egg-info
+# Published starter files have content hashes; change them through a template release.
+packages/templates/templates/*/code
