@@ -4,6 +4,8 @@ import { Slot } from "radix-ui"
 
 import { cn } from "@forgeAI/ui/lib/utils"
 
+// Class variants for the Button component.
+// Exported so links can be styled like buttons.
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
@@ -37,12 +39,20 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends
-  React.ButtonHTMLAttributes<HTMLButtonElement>,
-  VariantProps<typeof buttonVariants> {
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   asChild?: boolean
 }
 
-function Button({ className, variant, size, asChild = false, ...props }: ButtonProps) {
+// Styled button with variants and sizes.
+// `asChild` renders the styles onto a child element instead.
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: ButtonProps) {
   const Comp = asChild ? Slot.Root : "button"
   return (
     <Comp
