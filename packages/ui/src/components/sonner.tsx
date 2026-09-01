@@ -10,6 +10,8 @@ import {
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+// App-wide toast container themed to match the UI.
+// Mounted once near the root; toasts are fired with `toast()`.
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
