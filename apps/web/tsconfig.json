@@ -2,12 +2,8 @@
   "extends": "@forgeAI/typescript-config/nextjs.json",
   "compilerOptions": {
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@forgeAI/ui/*": [
-        "../../packages/ui/src/*"
-      ]
+      "@/*": ["./*"],
+      "@forgeAI/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [
@@ -17,7 +13,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

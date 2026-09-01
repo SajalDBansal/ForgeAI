@@ -2,16 +2,9 @@
   "extends": "@forgeAI/typescript-config/react-library.json",
   "compilerOptions": {
     "paths": {
-      "@forgeAI/ui/*": [
-        "./src/*"
-      ]
+      "@forgeAI/ui/*": ["./src/*"]
     }
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

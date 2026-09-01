@@ -1,25 +1,39 @@
 {
-  "name": "api-fast",
+  "name": "api-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node --import tsx dist/index.js",
+    "worker:audit": "tsx src/workers/main.ts audit",
+    "worker:cleanup": "tsx src/workers/main.ts cleanup",
+    "worker:github": "tsx src/workers/main.ts github",
+    "worker:notification": "tsx src/workers/main.ts notification",
+    "jobs": "tsx src/scripts/background-jobs.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "github:check": "tsx src/scripts/check-github-app.ts",
+    "secrets:rotate": "tsx src/scripts/rotate-encryption-keys.ts",
     "format": "prettier --write \"**/*.ts\"",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@fastify/cors": "11.3.0",
+    "@fastify/helmet": "13.1.1",
     "@forgeAI/database": "*",
+    "@forgeAI/jobs": "*",
+    "@forgeAI/sandbox-provider": "*",
     "@forgeAI/shared": "*",
     "better-auth": "^1.7.3",
+    "bullmq": "^6.3.12",
     "dotenv": "17.4.2",
-    "fastify": "5.12.1",
-    "resend": "^6.26.0"
+    "fastify": "5.12.5",
+    "fastify-plugin": "^6.0.0",
+    "ioredis": "^5.9.1",
+    "resend": "^6.26.0",
+    "undici": "^8.10.2"
   },
   "devDependencies": {
     "@forgeAI/eslint-config": "*",

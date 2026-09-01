@@ -1,0 +1,6 @@
+{
+  "extends": "@forgeAI/typescript-config/node-library.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

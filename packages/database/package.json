@@ -7,8 +7,6 @@
     ".": "./src/client.ts"
   },
   "scripts": {
-    "prebuild": "bun run db:generate",
-    "predev": "bun run db:generate",
     "build": "tsc --noEmit",
     "dev": "tsc --watch --noEmit",
     "typecheck": "tsc --noEmit",

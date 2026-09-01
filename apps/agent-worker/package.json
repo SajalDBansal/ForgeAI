@@ -1,0 +1,32 @@
+{
+  "name": "agent-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node --import tsx dist/index.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"**/*.ts\"",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@forgeAI/agent": "*",
+    "@forgeAI/database": "*",
+    "@forgeAI/orchestrator-client": "*",
+    "@forgeAI/shared": "*",
+    "bullmq": "^6.3.12",
+    "dotenv": "17.4.2",
+    "ioredis": "^5.9.1"
+  },
+  "devDependencies": {
+    "@forgeAI/eslint-config": "*",
+    "@forgeAI/typescript-config": "*",
+    "@types/node": "26.4.0",
+    "eslint": "9.39.5",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  }
+}

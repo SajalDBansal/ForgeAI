@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev worker:audit worker:cleanup worker:github worker:notification --concurrency=20",
     "lint": "turbo run lint",
-    "format": "turbo run format",
+    "format:check": "prettier --check \"apps/{api-server,agent-worker,orchestrator,ws-server,web}/**/*.{ts,tsx,js,mjs,json,css}\" \"packages/**/*.{ts,tsx,js,mjs,json,css}\" \"*.{json,ts}\"",
+    "format": "prettier --write \"apps/{api-server,agent-worker,orchestrator,ws-server,web}/**/*.{ts,tsx,js,mjs,json,css}\" \"packages/**/*.{ts,tsx,js,mjs,json,css}\" \"*.{json,ts}\"",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:generate": "turbo run db:generate",
@@ -36,5 +37,13 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "overrides": {
+    "@modelcontextprotocol/sdk": "1.31.0",
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2",
+    "dompurify": "3.4.16",
+    "mysql2": "3.24.5",
+    "deepmerge-ts": "8.0.2"
+  }
 }

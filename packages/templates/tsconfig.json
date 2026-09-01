@@ -1,0 +1,8 @@
+{
+  "extends": "@forgeAI/typescript-config/base.json",
+  "include": ["src/**/*.ts", "templates/*/template.ts"],
+  "exclude": ["node_modules", "templates/*/code"],
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
+}

@@ -1,8 +1,55 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "DATABASE_URL", "PORT", "NEXT_PUBLIC_API_HOST"],
+  "globalPassThroughEnv": [
+    "REDIS_URL",
+    "WORKER_PORT",
+    "JOB_*",
+    "AUDIT_RETENTION_DAYS",
+    "R2_SNAPSHOT_FOLDER_NAME"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "PORT",
+    "NEXT_PUBLIC_AUTH_URL",
+    "NEXT_PUBLIC_WS_URL",
+    "NEXT_PUBLIC_PREVIEW_URL",
+    "CSP_REPORT_ONLY"
+  ],
   "tasks": {
+    "@forgeAI/database#build": {
+      "dependsOn": ["db:generate"],
+      "outputs": []
+    },
+    "@forgeAI/database#dev": {
+      "dependsOn": ["db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "@forgeAI/database#typecheck": {
+      "dependsOn": ["db:generate"]
+    },
+    "worker:audit": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "worker:cleanup": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "worker:github": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "worker:notification": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
     "build": {
       "dependsOn": ["^build", "^db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -19,7 +66,7 @@
     "typecheck": {
       "dependsOn": ["^build", "^db:generate"]
     },
-    "format": {},
+    "format": { "cache": false },
     "clean": {
       "cache": false
     },
@@ -39,6 +86,20 @@
     "db:seed": {
       "cache": false,
       "dependsOn": ["^db:generate"]
+    },
+    "templates:sync": {
+      "cache": false,
+      "dependsOn": ["^db:generate"],
+      "env": [
+        "E2B_API_KEY",
+        "R2_BUCKET_NAME",
+        "R2_BUCKET_ENDPOINT",
+        "R2_TEMPLATE_FOLDER_NAME",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "SANDBOX_PLAN*",
+        "SANDBOX_PROVIDER"
+      ]
     }
   }
 }

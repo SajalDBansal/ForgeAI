@@ -3,7 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./types/*": "./src/types/*.ts",
+    "./validations/*": "./src/validations/*.ts",
+    "./lib/*": "./src/lib/*.ts"
   },
   "private": true,
   "scripts": {
