@@ -5,12 +5,16 @@ import { cn } from "@forgeAI/ui/lib/utils"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
+// Root of a dropdown menu.
+// Holds the open state for its trigger and content.
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
 
+// Renders menu content into a portal.
+// Keeps menus above other page content.
 function DropdownMenuPortal({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
@@ -19,6 +23,8 @@ function DropdownMenuPortal({
   )
 }
 
+// The element that opens the menu.
+// Usually a button or icon.
 function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
@@ -30,6 +36,8 @@ function DropdownMenuTrigger({
   )
 }
 
+// The positioned popup holding menu items.
+// Handles placement, animation and portal rendering.
 function DropdownMenuContent({
   className,
   sideOffset = 4,
@@ -42,7 +50,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         className={cn(
           "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-          className
+          className,
         )}
         {...props}
       />
@@ -50,6 +58,8 @@ function DropdownMenuContent({
   )
 }
 
+// Groups related menu items.
+// Used with a label to section a menu.
 function DropdownMenuGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
@@ -58,6 +68,8 @@ function DropdownMenuGroup({
   )
 }
 
+// A clickable menu entry.
+// Supports an inset layout and a destructive variant.
 function DropdownMenuItem({
   className,
   inset,
@@ -74,13 +86,15 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!",
-        className
+        className,
       )}
       {...props}
     />
   )
 }
 
+// A menu entry with a checkmark toggle.
+// Used for on/off options inside a menu.
 function DropdownMenuCheckboxItem({
   className,
   children,
@@ -92,7 +106,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
         "relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       checked={checked}
       {...props}
@@ -107,6 +121,8 @@ function DropdownMenuCheckboxItem({
   )
 }
 
+// Groups radio items so only one is selected.
+// Used for exclusive choices like sort order.
 function DropdownMenuRadioGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
@@ -118,6 +134,8 @@ function DropdownMenuRadioGroup({
   )
 }
 
+// A single selectable option in a radio group.
+// Shows a dot when selected.
 function DropdownMenuRadioItem({
   className,
   children,
@@ -128,7 +146,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       className={cn(
         "relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       {...props}
     >
@@ -142,6 +160,8 @@ function DropdownMenuRadioItem({
   )
 }
 
+// Non-interactive heading inside a menu.
+// Labels a group of items.
 function DropdownMenuLabel({
   className,
   inset,
@@ -155,13 +175,15 @@ function DropdownMenuLabel({
       data-inset={inset}
       className={cn(
         "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
-        className
+        className,
       )}
       {...props}
     />
   )
 }
 
+// Thin divider between menu sections.
+// Visually groups related items.
 function DropdownMenuSeparator({
   className,
   ...props
@@ -175,6 +197,8 @@ function DropdownMenuSeparator({
   )
 }
 
+// Right-aligned keyboard shortcut hint.
+// Shown next to a menu item's label.
 function DropdownMenuShortcut({
   className,
   ...props
@@ -184,19 +208,23 @@ function DropdownMenuShortcut({
       data-slot="dropdown-menu-shortcut"
       className={cn(
         "ml-auto text-xs tracking-widest text-muted-foreground",
-        className
+        className,
       )}
       {...props}
     />
   )
 }
 
+// Root of a nested submenu.
+// Holds the submenu's open state.
 function DropdownMenuSub({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
   return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
 }
 
+// Menu item that opens a submenu.
+// Shows a chevron to signal nesting.
 function DropdownMenuSubTrigger({
   className,
   inset,
@@ -211,7 +239,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cn(
         "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
-        className
+        className,
       )}
       {...props}
     >
@@ -221,6 +249,8 @@ function DropdownMenuSubTrigger({
   )
 }
 
+// The popup of a nested submenu.
+// Positioned beside its trigger.
 function DropdownMenuSubContent({
   className,
   ...props
@@ -230,7 +260,7 @@ function DropdownMenuSubContent({
       data-slot="dropdown-menu-sub-content"
       className={cn(
         "z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-        className
+        className,
       )}
       {...props}
     />
