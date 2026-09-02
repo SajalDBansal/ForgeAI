@@ -9,7 +9,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius-sm: 4px;
   --radius-md: 4px;
@@ -201,6 +203,17 @@
   border-left: 1px solid var(--hairline);
 }
 
+/* A strip that scrolls sideways when it runs out of room — a tab bar — but
+   whose scrollbar would eat into the row's height and show up uninvited. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Scrollbars in dark surfaces */
 .dark-scroll::-webkit-scrollbar {
   width: 10px;
@@ -217,7 +230,6 @@
 }
 
 @keyframes pulse-dot {
-
   0%,
   100% {
     opacity: 1;
@@ -233,7 +245,6 @@
 }
 
 @keyframes blink {
-
   0%,
   49% {
     opacity: 1;
