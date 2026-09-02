@@ -1,5 +1,7 @@
 import { cn } from "@forgeAI/ui/lib/utils"
 
+// Pulsing placeholder block.
+// Shown while content is loading.
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
