@@ -1,3 +1,5 @@
+// GitHub mark as an inline SVG that inherits text color.
+// Used on sign-in buttons and connection cards.
 export function GithubIcon({ className }: { className?: string }) {
   return (
     <svg
