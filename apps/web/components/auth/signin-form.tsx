@@ -2,23 +2,27 @@
 
 import { useState, type FormEvent } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { AuthShell, FormRow, inputCls } from "@/components/auth/auth-shell"
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { VerificationSent } from "@/components/auth/verification-sent"
-import { GithubIcon } from "@/components/brand/github-icon"
-import { GoogleIcon } from "@/components/brand/google-icon"
 import { authClient } from "@/lib/auth-client"
 
+// Email/password and social sign-in form.
+// Switches to "check your email" when the account isn't verified yet.
 export function SigninForm() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const searchParams = useSearchParams()
+  // Prefilled from an invite link so the right account signs in.
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "")
   const [pw, setPw] = useState("")
   const [loading, setLoading] = useState(false)
   const [unverified, setUnverified] = useState<string | null>(null)
 
+  // Signs in with email and password; a 403 means the email isn't verified yet.
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -29,16 +33,13 @@ export function SigninForm() {
         setUnverified(email)
         return
       }
-      toast.error(error.message ?? "Couldn't sign in. Check your email and password.")
+      toast.error(
+        error.message ?? "Couldn't sign in. Check your email and password.",
+      )
       return
     }
     router.push("/")
     router.refresh()
-  }
-
-  const socialSignin = async (provider: "github" | "google") => {
-    const { error } = await authClient.signIn.social({ provider, callbackURL: "/" })
-    if (error) toast.error(error.message ?? `Couldn't continue with ${provider}.`)
   }
 
   if (unverified) return <VerificationSent email={unverified} />
@@ -50,33 +51,17 @@ export function SigninForm() {
       footer={
         <>
           New here?{" "}
-          <Link href="/signup" className="text-ink underline underline-offset-4">
+          <Link
+            href="/signup"
+            className="text-ink underline underline-offset-4"
+          >
             Create an account
           </Link>
         </>
       }
     >
       <form onSubmit={submit} className="space-y-4">
-        <button
-          type="button"
-          onClick={() => socialSignin("github")}
-          className="w-full h-10 border border-hairline rounded-sm flex items-center justify-center gap-2 text-sm hover:bg-surface-soft"
-        >
-          <GithubIcon className="h-4 w-4" /> Continue with GitHub
-        </button>
-        <button
-          type="button"
-          onClick={() => socialSignin("google")}
-          className="w-full h-10 border border-hairline rounded-sm flex items-center justify-center gap-2 text-sm hover:bg-surface-soft"
-        >
-          <GoogleIcon className="h-4 w-4" /> Continue with Google
-        </button>
-
-        <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-hairline" />
-          <span className="text-[11px] uppercase tracking-widest text-mute">or</span>
-          <div className="flex-1 h-px bg-hairline" />
-        </div>
+        <SocialAuthButtons verb="Continue with" />
 
         <FormRow label="Email">
           <input
@@ -109,9 +94,10 @@ export function SigninForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep inline-flex items-center justify-center gap-2 disabled:opacity-50"
+          className="bg-ink text-on-primary hover:bg-ink-deep inline-flex h-10 w-full items-center justify-center gap-2 rounded-sm text-sm font-medium disabled:opacity-50"
         >
-          {loading ? "Signing in…" : "Sign in"} <ArrowRight className="h-4 w-4" />
+          {loading ? "Signing in…" : "Sign in"}{" "}
+          <ArrowRight className="h-4 w-4" />
         </button>
       </form>
     </AuthShell>

@@ -2,38 +2,45 @@
 
 import { useState, type FormEvent } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { ArrowRight, Check } from "lucide-react"
 import { toast } from "sonner"
 
 import { AuthShell, FormRow, inputCls } from "@/components/auth/auth-shell"
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { VerificationSent } from "@/components/auth/verification-sent"
-import { GithubIcon } from "@/components/brand/github-icon"
-import { GoogleIcon } from "@/components/brand/google-icon"
 import { authClient } from "@/lib/auth-client"
 
+// Account sign-up form (name, email, password) plus social sign-up.
+// Shows "check your email" once the account is created.
 export function SignupForm() {
+  const searchParams = useSearchParams()
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  // Prefilled from an invite link so the invited address is the one signed up.
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "")
   const [pw, setPw] = useState("")
   const [accept, setAccept] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sentTo, setSentTo] = useState<string | null>(null)
 
+  // Creates the account and asks the user to verify their email.
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await authClient.signUp.email({ name, email, password: pw })
+    const { error } = await authClient.signUp.email({
+      name,
+      email,
+      password: pw,
+    })
     setLoading(false)
     if (error) {
-      toast.error(error.message ?? "Couldn't create your workspace. Try a different email.")
+      toast.error(
+        error.message ??
+          "Couldn't create your workspace. Try a different email.",
+      )
       return
     }
     setSentTo(email)
-  }
-
-  const socialSignup = async (provider: "github" | "google") => {
-    const { error } = await authClient.signIn.social({ provider, callbackURL: "/" })
-    if (error) toast.error(error.message ?? `Couldn't continue with ${provider}.`)
   }
 
   if (sentTo) return <VerificationSent email={sentTo} />
@@ -45,33 +52,17 @@ export function SignupForm() {
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/signin" className="text-ink underline underline-offset-4">
+          <Link
+            href="/signin"
+            className="text-ink underline underline-offset-4"
+          >
             Sign in
           </Link>
         </>
       }
     >
       <form onSubmit={submit} className="space-y-4">
-        <button
-          type="button"
-          onClick={() => socialSignup("github")}
-          className="w-full h-10 border border-hairline rounded-sm flex items-center justify-center gap-2 text-sm hover:bg-surface-soft"
-        >
-          <GithubIcon className="h-4 w-4" /> Sign up with GitHub
-        </button>
-        <button
-          type="button"
-          onClick={() => socialSignup("google")}
-          className="w-full h-10 border border-hairline rounded-sm flex items-center justify-center gap-2 text-sm hover:bg-surface-soft"
-        >
-          <GoogleIcon className="h-4 w-4" /> Sign up with Google
-        </button>
-
-        <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-hairline" />
-          <span className="text-[11px] uppercase tracking-widest text-mute">or</span>
-          <div className="flex-1 h-px bg-hairline" />
-        </div>
+        <SocialAuthButtons verb="Sign up with" />
 
         <FormRow label="Full name">
           <input
@@ -104,21 +95,28 @@ export function SignupForm() {
           />
         </FormRow>
 
-        <label className="flex items-start gap-2 text-xs text-body">
+        <label className="text-body flex items-start gap-2 text-xs">
           <button
             type="button"
             onClick={() => setAccept(!accept)}
-            className={`mt-0.5 h-4 w-4 border border-hairline-strong rounded-sm flex items-center justify-center ${accept ? "bg-ink text-on-primary" : ""}`}>
+            className={`border-hairline-strong mt-0.5 flex h-4 w-4 items-center justify-center rounded-sm border ${accept ? "bg-ink text-on-primary" : ""}`}
+          >
             {accept && <Check className="h-3 w-3" />}
           </button>
 
           <span>
             I agree to the{" "}
-            <Link href="/terms" className="text-ink underline underline-offset-4">
+            <Link
+              href="/terms"
+              className="text-ink underline underline-offset-4"
+            >
               terms
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-ink underline underline-offset-4">
+            <Link
+              href="/privacy"
+              className="text-ink underline underline-offset-4"
+            >
               privacy policy
             </Link>
             .
@@ -128,9 +126,10 @@ export function SignupForm() {
         <button
           type="submit"
           disabled={!accept || loading}
-          className="w-full h-10 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep inline-flex items-center justify-center gap-2 disabled:opacity-50"
+          className="bg-ink text-on-primary hover:bg-ink-deep inline-flex h-10 w-full items-center justify-center gap-2 rounded-sm text-sm font-medium disabled:opacity-50"
         >
-          {loading ? "Creating…" : "Create workspace"} <ArrowRight className="h-4 w-4" />
+          {loading ? "Creating…" : "Create workspace"}{" "}
+          <ArrowRight className="h-4 w-4" />
         </button>
       </form>
     </AuthShell>
