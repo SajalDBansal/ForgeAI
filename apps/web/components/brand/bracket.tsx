@@ -2,6 +2,8 @@ import { cn } from "@forgeAI/ui/lib/utils"
 
 const MAP = { plus: "[+]", minus: "[-]", x: "[x]", dot: "[·]" } as const
 
+// Renders a monospace bracket glyph like "[+]" or "[x]".
+// Part of the app's terminal-style visual language.
 export function Bracket({
   kind = "plus",
   className,
@@ -9,5 +11,7 @@ export function Bracket({
   kind?: keyof typeof MAP
   className?: string
 }) {
-  return <span className={cn("text-ink font-mono", className)}>{MAP[kind]}</span>
+  return (
+    <span className={cn("text-ink font-mono", className)}>{MAP[kind]}</span>
+  )
 }

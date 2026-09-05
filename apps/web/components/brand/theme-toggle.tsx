@@ -11,12 +11,14 @@ import {
   TooltipTrigger,
 } from "@forgeAI/ui/components/tooltip"
 
+// Button that switches between light and dark mode.
+// Shows a neutral icon until mounted, since the theme is unknown on the server.
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- next-themes hydration guard: resolvedTheme is unknown on the server, so the real icon can only be committed after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration guard: the theme is unknown on the server.
     setMounted(true)
   }, [])
 
@@ -30,13 +32,15 @@ export function ThemeToggle() {
           variant="outline"
           size="icon-sm"
           aria-label="Toggle dark mode"
-          className="border-hairline rounded-sm text-body hover:bg-surface-soft hover:text-ink"
+          className="border-hairline text-body hover:bg-surface-soft hover:text-ink rounded-sm"
           onClick={() => setTheme(isDark ? "light" : "dark")}
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{isDark ? "Switch to light mode" : "Switch to dark mode"}</TooltipContent>
+      <TooltipContent>
+        {isDark ? "Switch to light mode" : "Switch to dark mode"}
+      </TooltipContent>
     </Tooltip>
   )
 }
