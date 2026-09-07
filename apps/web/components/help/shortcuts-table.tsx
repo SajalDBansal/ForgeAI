@@ -11,21 +11,23 @@ const SHORTCUTS = [
   { k: "⌘ B", v: "Toggle sidebar" },
 ]
 
+// Table of the app's keyboard shortcuts.
+// Shown on the Help page.
 export function ShortcutsTable() {
   return (
     <PageCard className="p-5">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <Keyboard className="h-4 w-4" />
         <h2 className="text-sm font-bold">Keyboard shortcuts</h2>
       </div>
-      <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+      <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
         {SHORTCUTS.map((s) => (
           <div
             key={s.k}
-            className="flex items-center justify-between text-sm py-1.5 hairline-b last:border-0"
+            className="hairline-b flex items-center justify-between py-1.5 text-sm last:border-0"
           >
             <span className="text-body">{s.v}</span>
-            <kbd className="text-[11px] font-mono px-1.5 py-0.5 border border-hairline rounded-sm bg-surface-soft">
+            <kbd className="border-hairline bg-surface-soft rounded-sm border px-1.5 py-0.5 font-mono text-[11px]">
               {s.k}
             </kbd>
           </div>

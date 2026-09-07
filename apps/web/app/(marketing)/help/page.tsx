@@ -8,14 +8,16 @@ import { ShortcutsTable } from "@/components/help/shortcuts-table"
 
 export const metadata: Metadata = { title: "Help — ForgeAI" }
 
+// Help page with guides, FAQ search and keyboard shortcuts.
+// Where users look up how things work.
 export default function HelpPage() {
   return (
     <PageShell breadcrumbs={[{ label: "help" }]}>
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6 p-6">
         <HelpCards />
         <FaqSearch />
         <ShortcutsTable />
-        <div className="text-xs text-mute">
+        <div className="text-mute text-xs">
           Can&apos;t find an answer?{" "}
           <Link href="/help" className="text-ink underline underline-offset-4">
             Open a ticket
