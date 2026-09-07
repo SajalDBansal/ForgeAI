@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 
+// Bordered card container for page sections.
+// The standard section surface across the app.
 export function PageCard({
   children,
   className = "",
@@ -8,17 +10,29 @@ export function PageCard({
   className?: string
 }) {
   return (
-    <div className={`border border-hairline rounded-sm bg-surface-soft ${className}`}>
+    <div
+      className={`border-hairline bg-surface-soft rounded-sm border ${className}`}
+    >
       {children}
     </div>
   )
 }
 
-export function SectionHeader({ label, hint }: { label: string; hint?: string }) {
+// Small uppercase section title with an optional hint.
+// Sits at the top of a PageCard.
+export function SectionHeader({
+  label,
+  hint,
+}: {
+  label: string
+  hint?: string
+}) {
   return (
-    <div className="flex items-baseline justify-between mb-3">
-      <h2 className="text-[11px] uppercase tracking-widest text-mute">{label}</h2>
-      {hint && <span className="text-[11px] text-mute">{hint}</span>}
+    <div className="mb-3 flex items-baseline justify-between">
+      <h2 className="text-mute text-[11px] tracking-widest uppercase">
+        {label}
+      </h2>
+      {hint && <span className="text-mute text-[11px]">{hint}</span>}
     </div>
   )
 }

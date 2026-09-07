@@ -2,7 +2,16 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Activity, Archive, Cable, CreditCard, LogIn, LogOut, User, Users } from "lucide-react"
+import {
+  Activity,
+  Archive,
+  Cable,
+  CreditCard,
+  LogIn,
+  LogOut,
+  User,
+  Users,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Avatar, AvatarFallback } from "@forgeAI/ui/components/avatar"
@@ -18,25 +27,32 @@ import {
 import { authClient } from "@/lib/auth-client"
 import { useSession } from "@/hooks/use-session"
 
+// Returns up to two initials from a name (or "U").
+// Used for the avatar fallback.
 function initials(name: string) {
   const parts = name.trim().split(/\s+/)
-  const letters = parts.length > 1 ? [parts[0]![0], parts[parts.length - 1]![0]] : [parts[0]?.[0], parts[0]?.[1]]
+  const letters =
+    parts.length > 1
+      ? [parts[0]![0], parts[parts.length - 1]![0]]
+      : [parts[0]?.[0], parts[0]?.[1]]
   return letters.filter(Boolean).join("").toUpperCase() || "U"
 }
 
+// Account menu with links to profile, usage, archive, billing and log out.
+// Shows a log-in button when signed out.
 export function UserMenu() {
   const router = useRouter()
   const { session, isPending } = useSession()
 
   if (isPending) {
-    return <div className="h-[58px] rounded-sm bg-surface-soft animate-pulse" />
+    return <div className="bg-surface-soft h-[58px] animate-pulse rounded-sm" />
   }
 
   if (!session) {
     return (
       <Link
         href="/signin"
-        className="h-10 px-3 flex items-center justify-center gap-2 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep"
+        className="bg-ink text-on-primary hover:bg-ink-deep flex h-10 items-center justify-center gap-2 rounded-sm px-3 text-sm font-medium"
       >
         <LogIn className="h-4 w-4" /> Log in
       </Link>
@@ -48,15 +64,15 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="w-full p-3 bg-surface-soft rounded-sm flex items-center gap-3 hover:bg-surface-card">
-          <Avatar className="rounded-full bg-ink text-on-primary">
-            <AvatarFallback className="rounded-full bg-ink text-on-primary text-xs font-bold">
+        <button className="bg-surface-soft hover:bg-surface-card flex w-full items-center gap-3 rounded-sm p-3">
+          <Avatar className="bg-ink text-on-primary rounded-full">
+            <AvatarFallback className="bg-ink text-on-primary rounded-full text-xs font-bold">
               {initials(name || email)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 text-left">
-            <div className="text-sm font-medium truncate">{name || email}</div>
-            <div className="text-[11px] text-mute truncate">{email}</div>
+            <div className="truncate text-sm font-medium">{name || email}</div>
+            <div className="text-mute truncate text-[11px]">{email}</div>
           </div>
         </button>
       </DropdownMenuTrigger>
@@ -64,9 +80,9 @@ export function UserMenu() {
         align="start"
         side="top"
         sideOffset={8}
-        className="w-56 rounded-sm border-hairline"
+        className="border-hairline w-56 rounded-sm"
       >
-        <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-mute truncate">
+        <DropdownMenuLabel className="text-mute truncate text-[11px] tracking-widest uppercase">
           {email}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

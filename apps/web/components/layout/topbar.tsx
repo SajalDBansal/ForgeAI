@@ -11,6 +11,8 @@ export interface Breadcrumb {
   href?: string
 }
 
+// Top bar with breadcrumbs, page actions, theme toggle and status pill.
+// Rendered by PageShell.
 export function TopBar({
   breadcrumbs,
   actions,
@@ -18,14 +20,13 @@ export function TopBar({
   breadcrumbs: Breadcrumb[]
   actions?: ReactNode
 }) {
-
   return (
-    <div className="hairline-b px-5 md:px-10 py-3 flex items-center justify-between gap-4">
-      <nav className="min-w-0 flex-1 flex items-center gap-3 text-sm text-mute">
-        <Link href="/" className="md:hidden hover:text-ink">
+    <div className="hairline-b flex items-center justify-between gap-4 px-5 py-3 md:px-10">
+      <nav className="text-mute flex min-w-0 flex-1 items-center gap-3 text-sm">
+        <Link href="/" className="hover:text-ink md:hidden">
           <WordmarkSmall />
         </Link>
-        <Link href="/" className="hidden md:inline hover:text-ink">
+        <Link href="/" className="hover:text-ink hidden md:inline">
           [ workspace ]
         </Link>
         {breadcrumbs.map((crumb, i) => {
@@ -38,17 +39,20 @@ export function TopBar({
                   {crumb.label}
                 </Link>
               ) : (
-                <span className={isLast ? "text-ink" : undefined}>{crumb.label}</span>
+                <span className={isLast ? "text-ink" : undefined}>
+                  {crumb.label}
+                </span>
               )}
             </span>
           )
         })}
       </nav>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
         {actions}
         <ThemeToggle />
-        <span className="h-8 px-3 text-sm bg-surface-card text-mute rounded-sm hidden sm:flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-success" /> All systems normal
+        <span className="bg-surface-card text-mute hidden h-8 items-center gap-2 rounded-sm px-3 text-sm sm:flex">
+          <span className="bg-success h-1.5 w-1.5 rounded-full" /> All systems
+          normal
         </span>
       </div>
     </div>
