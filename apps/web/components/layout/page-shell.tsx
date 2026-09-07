@@ -2,6 +2,8 @@ import type { ReactNode } from "react"
 
 import { TopBar, type Breadcrumb } from "@/components/layout/topbar"
 
+// Page layout with a breadcrumb top bar and scrollable body.
+// Used by most top-level pages.
 export function PageShell({
   breadcrumbs,
   actions,
@@ -14,7 +16,7 @@ export function PageShell({
   return (
     <>
       <TopBar breadcrumbs={breadcrumbs} actions={actions} />
-      <div className="flex-1 min-h-0 overflow-auto space-y-6">{children}</div>
+      <div className="min-h-0 flex-1 space-y-6 overflow-auto">{children}</div>
     </>
   )
 }
