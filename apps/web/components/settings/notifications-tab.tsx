@@ -3,6 +3,8 @@ import { Switch } from "@forgeAI/ui/components/switch"
 import { PageCard, SectionHeader } from "@/components/layout/page-card"
 import { Row } from "@/components/settings/row"
 
+// Settings tab with notification toggles.
+// Demo controls; not persisted yet.
 export function NotificationsTab() {
   return (
     <PageCard className="p-5">

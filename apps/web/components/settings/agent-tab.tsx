@@ -1,16 +1,24 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@forgeAI/ui/components/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@forgeAI/ui/components/select"
 import { Switch } from "@forgeAI/ui/components/switch"
 
 import { PageCard, SectionHeader } from "@/components/layout/page-card"
 import { Row } from "@/components/settings/row"
 
+// Settings tab for the agent's default mode, safety prompts and context size.
+// Demo controls; not persisted yet.
 export function AgentTab() {
   return (
     <PageCard className="p-5">
       <SectionHeader label="Agent behavior" />
       <Row label="Default mode" hint="Plan first, or jump to build">
         <Select defaultValue="Build">
-          <SelectTrigger className="w-full h-9 rounded-sm border-hairline bg-canvas text-sm">
+          <SelectTrigger className="border-hairline bg-canvas h-9 w-full rounded-sm text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -27,7 +35,7 @@ export function AgentTab() {
       </Row>
       <Row label="Context window" hint="Tokens kept across turns">
         <Select defaultValue="128k">
-          <SelectTrigger className="w-full h-9 rounded-sm border-hairline bg-canvas text-sm">
+          <SelectTrigger className="border-hairline bg-canvas h-9 w-full rounded-sm text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
