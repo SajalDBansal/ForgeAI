@@ -1,118 +1,118 @@
 "use client"
 
-import { useState } from "react"
 import { Building2, Check, Users, Zap } from "lucide-react"
 
 import { PageCard, SectionHeader } from "@/components/layout/page-card"
-import { displayToast } from "@/lib/toast"
+
+// Billing isn't wired to a backend yet — every account-specific value shows NA until it is.
+const NA = "NA"
 
 const PLANS = [
   {
-    id: "free", name: "Solo", price: "$0", per: "/mo",
-    features: ["3 projects", "100 messages / day", "Public deploys", "Community support"],
+    id: "free",
+    name: "Solo",
+    features: [
+      "3 projects",
+      "100 messages / day",
+      "Public deploys",
+      "Community support",
+    ],
     icon: <Users className="h-4 w-4" />,
   },
   {
-    id: "pro", name: "Studio", price: "$24", per: "/mo", highlight: true,
-    features: ["Unlimited projects", "Unlimited messages", "Private deploys", "GitHub auto-sync", "Email support"],
+    id: "pro",
+    name: "Studio",
+    highlight: true,
+    features: [
+      "Unlimited projects",
+      "Unlimited messages",
+      "Private deploys",
+      "GitHub auto-sync",
+      "Email support",
+    ],
     icon: <Zap className="h-4 w-4" />,
   },
   {
-    id: "team", name: "Team", price: "$96", per: "/mo · 5 seats",
-    features: ["Everything in Studio", "Shared workspace", "Roles & permissions", "Audit log", "SSO (SAML)"],
+    id: "team",
+    name: "Team",
+    features: [
+      "Everything in Studio",
+      "Shared workspace",
+      "Roles & permissions",
+      "Audit log",
+      "SSO (SAML)",
+    ],
     icon: <Building2 className="h-4 w-4" />,
   },
 ]
 
+// Small label/value pair.
+// Used in the plan and billing summaries.
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-widest text-mute">{label}</div>
+      <div className="text-mute text-[11px] tracking-widest uppercase">
+        {label}
+      </div>
       <div className="mt-1 text-sm font-medium">{value}</div>
     </div>
   )
 }
 
+// Plan and billing page: current plan, plan options and billing details.
+// Billing isn't wired up yet, so values show NA and buttons are disabled.
 export function PlanView() {
-  const [current, setCurrent] = useState("pro")
-  const [cycle, setCycle] = useState<"monthly" | "annual">("monthly")
-
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6">
       <PageCard className="p-5">
         <SectionHeader label="Current workspace" />
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Stat label="Workspace" value="forgeai-studio" />
-          <Stat label="Plan" value="Studio (Monthly)" />
-          <Stat label="Renews" value="Jul 29, 2026" />
-          <Stat label="Members" value="3 of unlimited" />
-          <Stat label="Messages this cycle" value="1,284 / unlimited" />
-          <Stat label="Projects" value="6 active" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Stat label="Workspace" value={NA} />
+          <Stat label="Plan" value={NA} />
+          <Stat label="Renews" value={NA} />
+          <Stat label="Members" value={NA} />
+          <Stat label="Messages this cycle" value={NA} />
+          <Stat label="Projects" value={NA} />
         </div>
       </PageCard>
 
       <PageCard className="p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <SectionHeader label="Change plan" />
-          <div className="flex border border-hairline rounded-sm text-xs">
-            <button
-              onClick={() => setCycle("monthly")}
-              className={`h-7 px-3 ${cycle === "monthly" ? "bg-ink text-on-primary" : ""}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setCycle("annual")}
-              className={`h-7 px-3 ${cycle === "annual" ? "bg-ink text-on-primary" : ""}`}
-            >
-              Annual <span className="text-success ml-1">−20%</span>
-            </button>
-          </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid gap-3 md:grid-cols-3">
           {PLANS.map((p) => {
-            const active = current === p.id
             return (
               <div
                 key={p.id}
-                className={`rounded-sm border p-5 ${active ? "border-ink ring-1 ring-ink" : "border-hairline"} ${p.highlight ? "bg-surface-soft" : "bg-canvas"
-                  }`}
+                className={`border-hairline rounded-sm border p-5 ${p.highlight ? "bg-surface-soft" : "bg-canvas"}`}
               >
-                <div className="flex items-center gap-2 text-ink">
+                <div className="text-ink flex items-center gap-2">
                   {p.icon}
                   <h3 className="font-bold">{p.name}</h3>
                   {p.highlight && (
-                    <span className="ml-auto text-[10px] uppercase tracking-widest bg-ink text-on-primary px-1.5 py-0.5 rounded-sm">
+                    <span className="bg-ink text-on-primary ml-auto rounded-sm px-1.5 py-0.5 text-[10px] tracking-widest uppercase">
                       Popular
                     </span>
                   )}
                 </div>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">
-                    {cycle === "annual" && p.id !== "free"
-                      ? p.price.replace(/\$(\d+)/, (_, n) => `$${Math.round(Number(n) * 0.8)}`)
-                      : p.price}
-                  </span>
-                  <span className="text-mute text-sm">{p.per}</span>
+                  <span className="text-3xl font-bold">{NA}</span>
                 </div>
                 <ul className="mt-4 space-y-1.5 text-sm">
                   {p.features.map((f) => (
                     <li key={f} className="flex gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 text-success shrink-0" />
+                      <Check className="text-success mt-0.5 h-3.5 w-3.5 shrink-0" />
                       <span className="text-body">{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button
-                  onClick={() => {
-                    setCurrent(p.id)
-                    displayToast(`Switched to ${p.name} (demo)`)
-                  }}
-                  disabled={active}
-                  className={`mt-5 w-full h-9 rounded-sm text-sm font-medium ${active ? "border border-hairline text-mute" : "bg-ink text-on-primary hover:bg-ink-deep"
-                    }`}
+                  disabled
+                  title="Not available yet"
+                  className="border-hairline text-mute mt-5 h-9 w-full rounded-sm border text-sm font-medium"
                 >
-                  {active ? "Current plan" : `Choose ${p.name}`}
+                  Choose {p.name}
                 </button>
               </div>
             )
@@ -122,20 +122,22 @@ export function PlanView() {
 
       <PageCard className="p-5">
         <SectionHeader label="Billing" />
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Stat label="Payment method" value="•••• 4242 · 09/28" />
-          <Stat label="Billing email" value="finance@forgeai.dev" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Stat label="Payment method" value={NA} />
+          <Stat label="Billing email" value={NA} />
         </div>
         <div className="mt-4 flex gap-2">
           <button
-            onClick={() => displayToast("Card updated (demo)")}
-            className="h-9 px-3 border border-hairline rounded-sm text-sm hover:bg-surface-soft"
+            disabled
+            title="Not available yet"
+            className="border-hairline text-mute h-9 rounded-sm border px-3 text-sm"
           >
             Update card
           </button>
           <button
-            onClick={() => displayToast("Invoice downloaded (demo)")}
-            className="h-9 px-3 border border-hairline rounded-sm text-sm hover:bg-surface-soft"
+            disabled
+            title="Not available yet"
+            className="border-hairline text-mute h-9 rounded-sm border px-3 text-sm"
           >
             Download invoices
           </button>
