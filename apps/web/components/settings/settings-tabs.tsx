@@ -1,4 +1,9 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@forgeAI/ui/components/tabs"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@forgeAI/ui/components/tabs"
 
 import { ProfileTab } from "@/components/settings/profile-tab"
 import { AppearanceTab } from "@/components/settings/appearance-tab"
@@ -14,15 +19,17 @@ const TABS = [
   { value: "keys", label: "Keys" },
 ] as const
 
+// Tab bar and panels for the Settings page.
+// Profile, appearance, agent, notifications and keys.
 export function SettingsTabs() {
   return (
     <Tabs defaultValue="profile">
-      <TabsList className="flex h-auto w-full justify-start rounded-none border-b border-hairline bg-transparent p-0 -mt-2 mb-6">
+      <TabsList className="border-hairline -mt-2 mb-6 flex h-auto w-full justify-start rounded-none border-b bg-transparent p-0">
         {TABS.map((t) => (
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className="h-10 flex-none rounded-none border-b-2 border-transparent px-3 text-sm font-normal text-mute shadow-none data-[state=active]:border-ink data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-ink data-[state=active]:shadow-none"
+            className="text-mute data-[state=active]:border-ink data-[state=active]:text-ink h-10 flex-none rounded-none border-b-2 border-transparent px-3 text-sm font-normal shadow-none data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:shadow-none"
           >
             {t.label}
           </TabsTrigger>
