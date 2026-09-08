@@ -4,6 +4,8 @@ import { PageCard, SectionHeader } from "@/components/layout/page-card"
 import { displayToast } from "@/lib/toast"
 import { Row, inputCls } from "@/components/settings/row"
 
+// Settings tab for display name, email, handle and avatar.
+// Demo form; saving only shows a toast.
 export function ProfileTab() {
   return (
     <PageCard className="p-5">
@@ -12,31 +14,35 @@ export function ProfileTab() {
         <input className={inputCls} defaultValue="Ada Lovelace" />
       </Row>
       <Row label="Email">
-        <input className={inputCls} type="email" defaultValue="ada@forgeai.dev" />
+        <input
+          className={inputCls}
+          type="email"
+          defaultValue="ada@forgeai.dev"
+        />
       </Row>
       <Row label="Handle" hint="Used in shared URLs">
         <input className={inputCls} defaultValue="ada" />
       </Row>
       <Row label="Avatar">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-sm bg-ink text-on-primary flex items-center justify-center font-bold">
+          <div className="bg-ink text-on-primary flex h-12 w-12 items-center justify-center rounded-sm font-bold">
             A
           </div>
           <button
             onClick={() => displayToast("Upload disabled (demo)")}
-            className="text-sm h-9 px-3 border border-hairline rounded-sm hover:bg-surface-soft"
+            className="border-hairline hover:bg-surface-soft h-9 rounded-sm border px-3 text-sm"
           >
             Upload
           </button>
         </div>
       </Row>
-      <div className="pt-4 flex justify-end gap-2">
-        <button className="h-9 px-4 border border-hairline rounded-sm text-sm hover:bg-surface-soft">
+      <div className="flex justify-end gap-2 pt-4">
+        <button className="border-hairline hover:bg-surface-soft h-9 rounded-sm border px-4 text-sm">
           Reset
         </button>
         <button
           onClick={() => displayToast("Saved (demo)")}
-          className="h-9 px-4 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep"
+          className="bg-ink text-on-primary hover:bg-ink-deep h-9 rounded-sm px-4 text-sm font-medium"
         >
           Save
         </button>
