@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { PUBLIC_ENV } from "@/lib/env"
 
 export interface Connection {
   provider: "GITHUB" | "VERCEL" | "RENDER" | "SUPABASE"
@@ -9,8 +10,10 @@ export interface Connection {
   updatedAt: string
 }
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL
+const AUTH_URL = PUBLIC_ENV.AUTH_URL
 
+// Loads the user's provider connections, with a manual refresh.
+// Backs the Connections page and connection-dependent UI.
 export function useConnections() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [loading, setLoading] = useState(true)
@@ -18,7 +21,9 @@ export function useConnections() {
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${AUTH_URL}/api/v1/connections`, { credentials: "include" })
+      const res = await fetch(`${AUTH_URL}/api/v1/connections`, {
+        credentials: "include",
+      })
       setConnections(res.ok ? ((await res.json()) as Connection[]) : [])
     } catch {
       setConnections([])

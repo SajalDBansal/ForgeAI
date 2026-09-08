@@ -7,21 +7,25 @@ import { Skeleton } from "@forgeAI/ui/components/skeleton"
 
 import { PageCard } from "@/components/layout/page-card"
 
+// Placeholder card shown while connections load.
+// Matches ConnectorCard's layout.
 export function ConnectorCardSkeleton() {
   return (
     <PageCard className="p-5">
       <div className="flex items-start gap-4">
-        <Skeleton className="h-12 w-12 rounded-sm bg-surface-card shrink-0" />
-        <div className="flex-1 min-w-0 space-y-2 py-0.5">
-          <Skeleton className="h-4 w-24 rounded-sm bg-surface-card" />
-          <Skeleton className="h-3 w-56 rounded-sm bg-surface-card" />
+        <Skeleton className="bg-surface-card h-12 w-12 shrink-0 rounded-sm" />
+        <div className="min-w-0 flex-1 space-y-2 py-0.5">
+          <Skeleton className="bg-surface-card h-4 w-24 rounded-sm" />
+          <Skeleton className="bg-surface-card h-3 w-56 rounded-sm" />
         </div>
-        <Skeleton className="h-8 w-20 rounded-sm bg-surface-card shrink-0" />
+        <Skeleton className="bg-surface-card h-8 w-20 shrink-0 rounded-sm" />
       </div>
     </PageCard>
   )
 }
 
+// One provider card with icon, status badge and an action button.
+// Clicking the card opens the provider's detail page.
 export function ConnectorCard({
   slug,
   icon,
@@ -42,22 +46,28 @@ export function ConnectorCard({
   const router = useRouter()
 
   return (
-    <PageCard className="p-5 hover:border-hairline-strong cursor-pointer">
-      <div onClick={() => router.push(`/connections/${slug}`)} className="flex items-start gap-4">
-        <div className="h-12 w-12 rounded-sm bg-ink text-on-primary flex items-center justify-center shrink-0">
+    <PageCard className="hover:border-hairline-strong cursor-pointer p-5">
+      <div
+        onClick={() => router.push(`/connections/${slug}`)}
+        className="flex items-start gap-4"
+      >
+        <div className="bg-ink text-on-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-sm">
           {icon}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h2 className="font-bold">{name}</h2>
             <span
-              className={`text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm ${connected ? "bg-success/15 text-success" : "bg-surface-card text-mute"
-                }`}
+              className={`rounded-sm px-1.5 py-0.5 text-[10px] tracking-widest uppercase ${
+                connected
+                  ? "bg-success/15 text-success"
+                  : "bg-surface-card text-mute"
+              }`}
             >
               {status}
             </span>
           </div>
-          <p className="mt-1 text-sm text-body">{description}</p>
+          <p className="text-body mt-1 text-sm">{description}</p>
         </div>
         <div onClick={(e) => e.stopPropagation()} className="shrink-0">
           {action}
