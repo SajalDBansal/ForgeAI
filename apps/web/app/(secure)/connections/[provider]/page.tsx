@@ -16,6 +16,8 @@ const CONNECTORS = {
 
 type ConnectorSlug = keyof typeof CONNECTORS
 
+// Page title from the provider name.
+// Used by Next.js for the browser tab.
 export async function generateMetadata({
   params,
 }: {
@@ -23,9 +25,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { provider } = await params
   const connector = CONNECTORS[provider as ConnectorSlug]
-  return { title: connector ? `${connector.label} — ForgeAI` : "Connections — ForgeAI" }
+  return {
+    title: connector ? `${connector.label} — ForgeAI` : "Connections — ForgeAI",
+  }
 }
 
+// Detail page for one connection provider (404 for unknown ones).
+// Opened from the connections list.
 export default async function ConnectionProviderPage({
   params,
 }: {
@@ -37,7 +43,12 @@ export default async function ConnectionProviderPage({
 
   const { label, View } = connector
   return (
-    <PageShell breadcrumbs={[{ label: "connections", href: "/connections" }, { label: label.toLowerCase() }]}>
+    <PageShell
+      breadcrumbs={[
+        { label: "connections", href: "/connections" },
+        { label: label.toLowerCase() },
+      ]}
+    >
       <div className="pt-6">
         <View />
       </div>
