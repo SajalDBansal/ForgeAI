@@ -7,16 +7,22 @@ import { GithubIcon } from "@/components/brand/github-icon"
 import { VercelIcon } from "@/components/brand/vercel-icon"
 import { RenderIcon } from "@/components/brand/render-icon"
 import { SupabaseIcon } from "@/components/brand/supabase-icon"
-import { ConnectorCard, ConnectorCardSkeleton } from "@/components/connections/connector-card"
+import {
+  ConnectorCard,
+  ConnectorCardSkeleton,
+} from "@/components/connections/connector-card"
 import { RenderConnectDialog } from "@/components/connections/render-connect-dialog"
 import { useConnections, type Connection } from "@/hooks/use-connections"
 import { displayToast } from "@/lib/toast"
+import { PUBLIC_ENV } from "@/lib/env"
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL
+const AUTH_URL = PUBLIC_ENV.AUTH_URL
 
 const actionCls = {
-  connect: "h-8 px-3 rounded-sm text-xs font-medium bg-ink text-on-primary hover:bg-ink-deep inline-flex items-center",
-  disconnect: "h-8 px-3 rounded-sm text-xs font-medium border border-hairline hover:bg-surface-soft",
+  connect:
+    "h-8 px-3 rounded-sm text-xs font-medium bg-ink text-on-primary hover:bg-ink-deep inline-flex items-center",
+  disconnect:
+    "h-8 px-3 rounded-sm text-xs font-medium border border-hairline hover:bg-surface-soft",
 }
 
 type ConnectorSlug = "github" | "vercel" | "supabase" | "render"
@@ -29,12 +35,41 @@ const CONNECTORS: {
   description: string
   startPath?: string
 }[] = [
-  { slug: "github", provider: "GITHUB", icon: <GithubIcon className="h-6 w-6" />, name: "GitHub", description: "Sync ForgeAI projects to GitHub repositories.", startPath: "github/start" },
-  { slug: "vercel", provider: "VERCEL", icon: <VercelIcon className="h-6 w-6" />, name: "Vercel", description: "Deploy ForgeAI projects to Vercel edge network.", startPath: "vercel/start" },
-  { slug: "supabase", provider: "SUPABASE", icon: <SupabaseIcon className="h-6 w-6" />, name: "Supabase", description: "Provision Postgres, auth, and storage for ForgeAI projects.", startPath: "supabase/start" },
-  { slug: "render", provider: "RENDER", icon: <RenderIcon className="h-6 w-6" />, name: "Render", description: "Host ForgeAI backends and static sites on Render." },
+  {
+    slug: "github",
+    provider: "GITHUB",
+    icon: <GithubIcon className="h-6 w-6" />,
+    name: "GitHub",
+    description: "Sync ForgeAI projects to GitHub repositories.",
+    startPath: "github/start",
+  },
+  {
+    slug: "vercel",
+    provider: "VERCEL",
+    icon: <VercelIcon className="h-6 w-6" />,
+    name: "Vercel",
+    description: "Deploy ForgeAI projects to Vercel edge network.",
+    startPath: "vercel/start",
+  },
+  {
+    slug: "supabase",
+    provider: "SUPABASE",
+    icon: <SupabaseIcon className="h-6 w-6" />,
+    name: "Supabase",
+    description: "Provision Postgres, auth, and storage for ForgeAI projects.",
+    startPath: "supabase/start",
+  },
+  {
+    slug: "render",
+    provider: "RENDER",
+    icon: <RenderIcon className="h-6 w-6" />,
+    name: "Render",
+    description: "Host ForgeAI backends and static sites on Render.",
+  },
 ]
 
+// Connections page: a card per provider with connect/disconnect actions.
+// Also shows the result of an OAuth round trip passed back in the query string.
 export function ConnectionsView() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -54,8 +89,12 @@ export function ConnectionsView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  // Removes a provider connection and refreshes the list.
   const disconnect = async (slug: ConnectorSlug, name: string) => {
-    const res = await fetch(`${AUTH_URL}/api/v1/connections/${slug}`, { method: "DELETE", credentials: "include" })
+    const res = await fetch(`${AUTH_URL}/api/v1/connections/${slug}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
     if (res.ok) {
       displayToast(`Disconnected ${name}`)
       void refresh()
@@ -65,11 +104,13 @@ export function ConnectionsView() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-3">
+    <div className="mx-auto max-w-3xl space-y-3 p-6">
       {loading
         ? CONNECTORS.map((c) => <ConnectorCardSkeleton key={c.slug} />)
         : CONNECTORS.map((c) => {
-            const connection = connections.find((x) => x.provider === c.provider && x.status === "CONNECTED")
+            const connection = connections.find(
+              (x) => x.provider === c.provider && x.status === "CONNECTED",
+            )
             return (
               <ConnectorCard
                 key={c.slug}
@@ -77,19 +118,32 @@ export function ConnectionsView() {
                 icon={c.icon}
                 name={c.name}
                 description={c.description}
-                status={connection ? `Connected as ${connection.externalAccountLogin}` : "Not connected"}
+                status={
+                  connection
+                    ? `Connected as ${connection.externalAccountLogin}`
+                    : "Not connected"
+                }
                 connected={Boolean(connection)}
                 action={
                   connection ? (
-                    <button onClick={() => disconnect(c.slug, c.name)} className={actionCls.disconnect}>
+                    <button
+                      onClick={() => disconnect(c.slug, c.name)}
+                      className={actionCls.disconnect}
+                    >
                       Disconnect
                     </button>
                   ) : c.startPath ? (
-                    <a href={`${AUTH_URL}/api/v1/connections/${c.startPath}`} className={actionCls.connect}>
+                    <a
+                      href={`${AUTH_URL}/api/v1/connections/${c.startPath}`}
+                      className={actionCls.connect}
+                    >
                       Connect
                     </a>
                   ) : (
-                    <button onClick={() => setRenderDialogOpen(true)} className={actionCls.connect}>
+                    <button
+                      onClick={() => setRenderDialogOpen(true)}
+                      className={actionCls.connect}
+                    >
                       Connect
                     </button>
                   )
