@@ -2,11 +2,18 @@
 
 import { useState, type FormEvent } from "react"
 
-import { ModalShell, btnGhost, btnPrimary } from "@/components/modal/modal-shell"
+import {
+  ModalShell,
+  btnGhost,
+  btnPrimary,
+} from "@/components/modal/modal-shell"
 import { displayToast } from "@/lib/toast"
+import { PUBLIC_ENV } from "@/lib/env"
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL
+const AUTH_URL = PUBLIC_ENV.AUTH_URL
 
+// Dialog to connect Render by pasting an API key (Render has no OAuth).
+// Verifies the key with the API before closing.
 export function RenderConnectDialog({
   onClose,
   onConnected,
@@ -17,6 +24,7 @@ export function RenderConnectDialog({
   const [apiKey, setApiKey] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // Sends the key for verification and reports the connected account.
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const trimmed = apiKey.trim()
@@ -38,6 +46,8 @@ export function RenderConnectDialog({
       displayToast(`Connected to Render as ${data.ownerName}`)
       onConnected()
       onClose()
+    } catch {
+      displayToast("Could not reach the server. Try again.")
     } finally {
       setLoading(false)
     }
@@ -53,7 +63,12 @@ export function RenderConnectDialog({
           <button type="button" onClick={onClose} className={btnGhost}>
             Cancel
           </button>
-          <button type="submit" form="render-connect-form" disabled={loading} className={btnPrimary}>
+          <button
+            type="submit"
+            form="render-connect-form"
+            disabled={loading}
+            className={btnPrimary}
+          >
             {loading ? "Verifying…" : "Connect"}
           </button>
         </>
@@ -61,7 +76,9 @@ export function RenderConnectDialog({
     >
       <form id="render-connect-form" onSubmit={submit}>
         <label className="block">
-          <div className="text-[11px] uppercase tracking-widest text-mute mb-1.5">API key</div>
+          <div className="text-mute mb-1.5 text-[11px] tracking-widest uppercase">
+            API key
+          </div>
           <input
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
@@ -69,7 +86,7 @@ export function RenderConnectDialog({
             autoFocus
             required
             placeholder="rnd_••••••••••••••••••••••••"
-            className="w-full h-10 bg-canvas border border-hairline rounded-sm px-3 text-sm font-mono focus:outline-none focus:border-ink"
+            className="bg-canvas border-hairline focus:border-ink h-10 w-full rounded-sm border px-3 font-mono text-sm focus:outline-none"
           />
         </label>
       </form>
