@@ -1,17 +1,18 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { ExternalLink, RefreshCw } from "lucide-react"
 
-import { Skeleton } from "@forgeAI/ui/components/skeleton"
-
 import { PageCard } from "@/components/layout/page-card"
+import {
+  ConnectionDetailSkeleton,
+  NotConnectedCard,
+  connectActionClass,
+  useConnectionDetails,
+  useDisconnect,
+} from "@/components/connections/connection-detail"
 import { RenderIcon } from "@/components/brand/render-icon"
 import { RenderConnectDialog } from "@/components/connections/render-connect-dialog"
-import { displayToast } from "@/lib/toast"
-
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL
 
 interface RenderService {
   id: string
@@ -27,118 +28,61 @@ interface RenderDetails {
   services: RenderService[]
 }
 
+// Connected Render workspace and its services.
+// Connecting uses a pasted API key instead of OAuth.
 export function RenderView() {
-  const router = useRouter()
-  const [details, setDetails] = useState<RenderDetails | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { details, loading, load } =
+    useConnectionDetails<RenderDetails>("render")
+  const disconnect = useDisconnect("render", "Render")
   const [connectOpen, setConnectOpen] = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`${AUTH_URL}/api/v1/connections/render`, { credentials: "include" })
-      setDetails(res.ok ? ((await res.json()) as RenderDetails) : null)
-    } catch {
-      setDetails(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
-  }, [load])
-
-  const disconnect = async () => {
-    const res = await fetch(`${AUTH_URL}/api/v1/connections/render`, {
-      method: "DELETE",
-      credentials: "include",
-    })
-    if (res.ok) {
-      displayToast("Disconnected Render")
-      router.push("/connections")
-    } else {
-      displayToast("Couldn't disconnect Render")
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <PageCard className="p-5">
-          <div className="flex items-start gap-4">
-            <Skeleton className="h-12 w-12 rounded-sm bg-surface-card shrink-0" />
-            <div className="flex-1 min-w-0 space-y-2 py-0.5">
-              <Skeleton className="h-4 w-32 rounded-sm bg-surface-card" />
-              <Skeleton className="h-3 w-48 rounded-sm bg-surface-card" />
-            </div>
-            <Skeleton className="h-9 w-24 rounded-sm bg-surface-card shrink-0" />
-          </div>
-        </PageCard>
-
-        <PageCard className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <Skeleton className="h-3 w-28 rounded-sm bg-surface-card" />
-            <Skeleton className="h-3 w-14 rounded-sm bg-surface-card" />
-          </div>
-          <ul className="divide-y divide-hairline -mx-2">
-            {[0, 1, 2, 3].map((i) => (
-              <li key={i} className="px-2 py-3 flex items-center gap-3">
-                <Skeleton className="h-4 w-4 rounded-sm bg-surface-card shrink-0" />
-                <div className="flex-1 min-w-0 space-y-2 py-0.5">
-                  <Skeleton className="h-3.5 w-40 rounded-sm bg-surface-card" />
-                  <Skeleton className="h-3 w-56 rounded-sm bg-surface-card" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </PageCard>
-      </div>
-    )
-  }
+  if (loading) return <ConnectionDetailSkeleton />
 
   if (!details) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <PageCard className="p-6 text-center">
-          <p className="text-sm text-body">Render is not connected yet.</p>
-          <button
-            onClick={() => setConnectOpen(true)}
-            className="mt-3 inline-flex h-9 px-4 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep items-center"
-          >
-            Connect Render
-          </button>
-        </PageCard>
-
-        {connectOpen && (
-          <RenderConnectDialog onClose={() => setConnectOpen(false)} onConnected={() => void load()} />
-        )}
-      </div>
+      <NotConnectedCard
+        name="Render"
+        extra={
+          connectOpen && (
+            <RenderConnectDialog
+              onClose={() => setConnectOpen(false)}
+              onConnected={() => void load()}
+            />
+          )
+        }
+      >
+        <button
+          onClick={() => setConnectOpen(true)}
+          className={connectActionClass}
+        >
+          Connect Render
+        </button>
+      </NotConnectedCard>
     )
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 p-6">
       <PageCard className="p-5">
         <div className="flex items-start gap-4">
-          <div className="h-12 w-12 rounded-sm bg-ink text-on-primary flex items-center justify-center shrink-0">
+          <div className="bg-ink text-on-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-sm">
             <RenderIcon className="h-6 w-6" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold truncate">{details.ownerName}</h2>
-              <span className="text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm bg-success/15 text-success shrink-0">
+              <h2 className="truncate font-bold">{details.ownerName}</h2>
+              <span className="bg-success/15 text-success shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] tracking-widest uppercase">
                 Connected
               </span>
             </div>
-            <p className="mt-1 text-sm text-body">
-              Workspace · connected {new Date(details.connectedAt).toLocaleDateString()}
+            <p className="text-body mt-1 text-sm">
+              Workspace · connected{" "}
+              {new Date(details.connectedAt).toLocaleDateString()}
             </p>
           </div>
           <button
             onClick={disconnect}
-            className="h-9 px-4 rounded-sm text-sm font-medium border border-hairline hover:bg-surface-soft shrink-0"
+            className="border-hairline hover:bg-surface-soft h-9 shrink-0 rounded-sm border px-4 text-sm font-medium"
           >
             Disconnect
           </button>
@@ -146,25 +90,29 @@ export function RenderView() {
       </PageCard>
 
       <PageCard className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[11px] uppercase tracking-widest text-mute">Services · {details.services.length}</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-mute text-[11px] tracking-widest uppercase">
+            Services · {details.services.length}
+          </h2>
           <button
             onClick={() => void load()}
-            className="text-xs inline-flex items-center gap-1 hover:text-ink text-mute"
+            className="hover:text-ink text-mute inline-flex items-center gap-1 text-xs"
           >
             <RefreshCw className="h-3 w-3" /> Resync
           </button>
         </div>
-        <ul className="divide-y divide-hairline -mx-2">
+        <ul className="divide-hairline -mx-2 divide-y">
           {details.services.map((s) => (
-            <li key={s.id} className="px-2 py-3 flex items-center gap-3">
-              <RenderIcon className="h-4 w-4 text-mute shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{s.name}</div>
-                <div className="text-[11px] text-mute flex items-center gap-2">
+            <li key={s.id} className="flex items-center gap-3 px-2 py-3">
+              <RenderIcon className="text-mute h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{s.name}</div>
+                <div className="text-mute flex items-center gap-2 text-[11px]">
                   <span>{s.type}</span>
                   <span>·</span>
-                  <span>updated {new Date(s.updatedAt).toLocaleDateString()}</span>
+                  <span>
+                    updated {new Date(s.updatedAt).toLocaleDateString()}
+                  </span>
                   {s.url && (
                     <>
                       <span>·</span>
@@ -172,7 +120,7 @@ export function RenderView() {
                         href={s.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 hover:text-ink"
+                        className="hover:text-ink inline-flex items-center gap-1"
                       >
                         Visit <ExternalLink className="h-3 w-3" />
                       </a>
@@ -183,7 +131,9 @@ export function RenderView() {
             </li>
           ))}
           {details.services.length === 0 && (
-            <li className="px-2 py-6 text-sm text-mute text-center">No services found.</li>
+            <li className="text-mute px-2 py-6 text-center text-sm">
+              No services found.
+            </li>
           )}
         </ul>
       </PageCard>
