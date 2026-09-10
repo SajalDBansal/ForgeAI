@@ -1,10 +1,20 @@
 import type { ReactNode } from "react"
 
-export function Panel({ children, title, meta }: { children: ReactNode; title?: string; meta?: string }) {
+// Bordered panel with an optional title and meta label.
+// The building block of every plan section.
+export function Panel({
+  children,
+  title,
+  meta,
+}: {
+  children: ReactNode
+  title?: string
+  meta?: string
+}) {
   return (
-    <div className="border border-hairline rounded-sm bg-canvas">
+    <div className="border-hairline bg-canvas rounded-sm border">
       {title && (
-        <div className="px-4 py-2.5 hairline-b text-[11px] text-mute flex items-center justify-between">
+        <div className="hairline-b text-mute flex items-center justify-between px-4 py-2.5 text-[11px]">
           <span>[ {title} ]</span>
           {meta && <span>{meta}</span>}
         </div>
