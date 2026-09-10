@@ -3,12 +3,19 @@ import { Panel } from "@/components/builder-plan/sections/panel"
 
 const GROUPS: { g: string; items: [string, string][] }[] = []
 
+// Plan section listing the proposed tech stack.
+// Placeholder content until the agent fills it in.
 export function Stack() {
   return (
     <div className="space-y-5">
-      <SectionTitle label="stack" hint="Locked choices the build pass will scaffold against." />
-      {GROUPS.length === 0 && <p className="text-[12px] text-mute">No stack chosen yet.</p>}
-      <div className="grid md:grid-cols-2 gap-3">
+      <SectionTitle
+        label="stack"
+        hint="Locked choices the build pass will scaffold against."
+      />
+      {GROUPS.length === 0 && (
+        <p className="text-mute text-[12px]">No stack chosen yet.</p>
+      )}
+      <div className="grid gap-3 md:grid-cols-2">
         {GROUPS.map((g) => (
           <Panel key={g.g} title={g.g.toLowerCase()}>
             <ul className="space-y-1.5">
