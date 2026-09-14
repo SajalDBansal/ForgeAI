@@ -1,0 +1,5 @@
+# A template's `code/` is hashed byte for byte to decide whether it needs
+# republishing, and it is unpacked on Linux inside the sandbox. Pinning the line
+# endings keeps that hash identical on Windows, macOS and CI — without this,
+# `core.autocrlf` alone would make every machine disagree and rebuild forever.
+templates/*/code/** text eol=lf
