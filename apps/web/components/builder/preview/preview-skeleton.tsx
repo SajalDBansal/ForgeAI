@@ -1,16 +1,18 @@
+// Pulsing placeholder shown over the preview while the iframe loads.
+// Removed once the iframe fires onLoad.
 export function PreviewSkeleton() {
   return (
-    <div className="p-8 space-y-4 animate-pulse">
-      <div className="h-3 w-24 bg-surface-card rounded-sm" />
-      <div className="h-8 w-2/3 bg-surface-card rounded-sm" />
-      <div className="h-3 w-1/2 bg-surface-card rounded-sm" />
-      <div className="h-3 w-2/5 bg-surface-card rounded-sm" />
-      <div className="grid grid-cols-3 gap-3 mt-8">
-        <div className="h-24 bg-surface-card rounded-sm" />
-        <div className="h-24 bg-surface-card rounded-sm" />
-        <div className="h-24 bg-surface-card rounded-sm" />
+    <div className="animate-pulse space-y-4 p-8">
+      <div className="bg-surface-card h-3 w-24 rounded-sm" />
+      <div className="bg-surface-card h-8 w-2/3 rounded-sm" />
+      <div className="bg-surface-card h-3 w-1/2 rounded-sm" />
+      <div className="bg-surface-card h-3 w-2/5 rounded-sm" />
+      <div className="mt-8 grid grid-cols-3 gap-3">
+        <div className="bg-surface-card h-24 rounded-sm" />
+        <div className="bg-surface-card h-24 rounded-sm" />
+        <div className="bg-surface-card h-24 rounded-sm" />
       </div>
-      <div className="text-[11px] text-mute pt-4">[ booting preview… ]</div>
+      <div className="text-mute pt-4 text-[11px]">[ booting preview… ]</div>
     </div>
   )
 }
