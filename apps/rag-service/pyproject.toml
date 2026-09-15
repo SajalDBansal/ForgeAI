@@ -1,0 +1,73 @@
+# pyproject.toml
+# ==============
+# This file tells Python how to install the project.
+#
+# The part you care about most is [project.scripts] at the bottom: it is what
+# turns `graph-rag-index` into a command you can type in a terminal.
+#
+# Install it with:      pip install -e .
+# The "-e" means "editable": Python points at these source files directly, so
+# your edits take effect immediately without reinstalling.
+
+[build-system]
+# The tooling used to build the package. setuptools is the standard choice.
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graph-rag-reviewer"
+version = "0.1.0"
+description = "Graph RAG over a codebase: index it into Neo4j, then ask questions about it"
+requires-python = ">=3.11"
+
+dependencies = [
+    # Talks to Neo4j over the Bolt protocol.
+    "neo4j>=5.15",
+
+    # Parses source code into syntax trees.
+    "tree-sitter>=0.21",
+    # The MAINTAINED grammar bundle. Do NOT swap this for
+    # `tree-sitter-languages` (no "-pack"): that package is abandoned and
+    # does not build on Python 3.12+.
+    "tree-sitter-language-pack>=0.9",
+
+    # The OpenAI / ChatGPT SDK - used for BOTH embeddings and the chat call.
+    "openai>=1.40",
+
+    # Typed data models, so a wrong field shape fails loudly and immediately.
+    "pydantic>=2.6",
+
+    # Reads the .env file so secrets never live in source code.
+    "python-dotenv>=1.0",
+
+    # The HTTP API ForgeAI calls (graph_rag/api.py): the web framework, the
+    # server that runs it, and the client that downloads source archives.
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+# Install with:  pip install -e ".[dev]"
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+# ---------------------------------------------------------------------------
+# THE TWO ENTRY POINTS
+# ---------------------------------------------------------------------------
+# Format is:  command-name = "python.module.path:function_name"
+# After `pip install -e .` both of these become real terminal commands.
+[project.scripts]
+graph-rag-index = "graph_rag.cli.index_command:main"
+graph-rag-ask = "graph_rag.cli.ask_command:main"
+# ForgeAI: the HTTP API (index, search, status, delete).
+graph-rag-serve = "graph_rag.api:main"
+
+[tool.setuptools.packages.find]
+# Ship the `graph_rag` package and its sub-packages; ignore everything else.
+include = ["graph_rag*"]
+
+[tool.ruff]
+line-length = 100
