@@ -1,5 +1,16 @@
 import z from "zod"
-import { collaboratorRoleSchema, invitationStatusSchema, connectionProviderSchema, connectionStatusSchema, projectModeSchema, projectSourceSchema, projectStatusSchema } from "../validations/enum.js"
+import {
+  agentRunStatusSchema,
+  collaboratorRoleSchema,
+  invitationStatusSchema,
+  connectionProviderSchema,
+  connectionStatusSchema,
+  fileChangeActionSchema,
+  projectModeSchema,
+  projectSourceSchema,
+  projectStatusSchema,
+  usageKindSchema,
+} from "../validations/enum.js"
 
 export type CollaboratorRole = z.infer<typeof collaboratorRoleSchema>
 
@@ -14,3 +25,9 @@ export type ProjectStatus = z.infer<typeof projectStatusSchema>
 export type ProjectMode = z.infer<typeof projectModeSchema>
 
 export type ProjectSource = z.infer<typeof projectSourceSchema>
+
+export type AgentRunStatus = z.infer<typeof agentRunStatusSchema>
+
+export type FileChangeAction = z.infer<typeof fileChangeActionSchema>
+
+export type UsageKind = z.infer<typeof usageKindSchema>
