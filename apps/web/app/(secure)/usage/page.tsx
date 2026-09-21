@@ -5,10 +5,12 @@ import { UsageTabs } from "@/components/usage/usage-tabs"
 
 export const metadata: Metadata = { title: "Usage & history — ForgeAI" }
 
+// Usage & history page.
+// Hosts the usage tabs.
 export default function UsagePage() {
   return (
     <PageShell breadcrumbs={[{ label: "usage" }]}>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6 p-6">
         <UsageTabs />
       </div>
     </PageShell>
