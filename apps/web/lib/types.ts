@@ -1,5 +1,7 @@
 import type {
   AccountCollaborator as DbAccountCollaborator,
+  EnsurePodResponse as DbEnsurePodResponse,
+  PodRecord as DbPodRecord,
   Project as DbProject,
   Template as DbTemplate,
   TemplateInfo as DbTemplateInfo,
@@ -13,14 +15,22 @@ import type {
 
 export type {
   CollaboratorRole,
+  DevCommandSettings,
+  DevServerState,
+  DevServerStatus,
+  PodFile,
+  PodFileListing,
+  PreviewLinkStatus,
   ConnectionProvider,
   ConnectionStatus,
   CreateProjectDataType,
   CreateTemplateDataType,
+  InvitationPreview,
   InvitationStatus,
   ProjectMode,
   ProjectSource,
   ProjectStatus,
+  TemplateDownload,
   TemplateMetadata,
   UpdateProjectDataType,
   UpdateWorkspaceDataType,
@@ -39,6 +49,10 @@ export interface RepoRef {
   owner: string
   name: string
   branch: string
+  /** Created by ForgeAI and pushed to on every commit (imported repos are not). */
+  managed?: boolean
+  /** The GitHub commit the project's files are based on, once it's on GitHub. */
+  lastKnownSha?: string | null
   connectionId?: string | null
 }
 
@@ -51,13 +65,24 @@ export type Project = Omit<
   initialPrompt?: string
   repoId?: string | null
   repo?: RepoRef | null
+  /** The creator's display name, resolved server-side. */
+  createdByName?: string | null
 }
 
-export type Workspace = Omit<Serialized<DbWorkspace>, "createdAt" | "updatedAt" | "userId"> & {
+export type Workspace = Omit<
+  Serialized<DbWorkspace>,
+  "createdAt" | "updatedAt" | "userId"
+> & {
   createdAt?: string
   updatedAt?: string
   userId?: string
 }
+
+/** The sandbox as the API reports it — `lastUsedAt` arrives as a JSON string. */
+export type PodRecord = Serialized<DbPodRecord>
+
+/** The ensure response: the pod, plus whether this call created it. */
+export type EnsurePodResponse = Serialized<DbEnsurePodResponse>
 
 export type Template = Serialized<DbTemplate>
 
@@ -65,13 +90,21 @@ export type TemplateDetail = Serialized<DbTemplateInfo>
 
 export type TemplateListItem = Pick<
   Template,
-  "id" | "name" | "tag" | "description" | "storageRef" | "previewImageUrl" | "workspaceId"
+  | "id"
+  | "name"
+  | "tag"
+  | "description"
+  | "storageRef"
+  | "previewImageUrl"
+  | "workspaceId"
 >
 
 export type WorkspaceCollaborator = Serialized<DbWorkspaceCollaborator>
 
 export type AccountCollaborator = Serialized<DbAccountCollaborator>
 
+// Returns up to two initials from a name, falling back to the email.
+// Used for avatar fallbacks.
 export function collaboratorInitials(name: string, email: string): string {
   const source = name.trim() || email.trim()
   const parts = source.split(/\s+/).filter(Boolean)
@@ -120,6 +153,10 @@ export interface Message {
   kind: MessageKind
   text?: string
   timestamp: string
+  /** Sender of a user message; absent for agent/system/local notices, null when unknown. */
+  author?: { id: string; name: string } | null
+  /** The agent run it belongs to (I2); absent for plain chat. */
+  runId?: string | null
   tasks?: TaskItem[]
   options?: string[]
   files?: FileChange[]
@@ -144,15 +181,29 @@ export const PROJECT_MODE_LABEL: Record<ProjectMode, string> = {
   PLAN: "Plan",
 }
 
+// Returns the user's base (undeletable) workspace id, else the first one.
+// The default home for new projects.
 export function findBaseWorkspaceId(workspaces: Workspace[]): string | null {
-  return workspaces.find((w) => w.deleteable === false)?.id ?? workspaces[0]?.id ?? null
+  return (
+    workspaces.find((w) => w.deleteable === false)?.id ??
+    workspaces[0]?.id ??
+    null
+  )
 }
 
-export function resolveWorkspaceName(workspace: Workspace, firstName?: string): string {
-  if (workspace.deleteable === false && firstName) return `${firstName}'s projects`
+// Shows the base workspace as "<first name>'s projects"; others keep their name.
+// Used wherever a workspace name is displayed.
+export function resolveWorkspaceName(
+  workspace: Workspace,
+  firstName?: string,
+): string {
+  if (workspace.deleteable === false && firstName)
+    return `${firstName}'s projects`
   return workspace.name
 }
 
+// Formats an ISO time as a short relative label ("5m ago", "yesterday").
+// Used across project and history lists.
 export function formatRelativeTime(iso?: string | null): string {
   if (!iso) return "—"
   const ms = Date.now() - new Date(iso).getTime()
