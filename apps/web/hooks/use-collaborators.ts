@@ -1,40 +1,34 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback } from "react"
 
-import { useSession } from "@/hooks/use-session"
+import { useAppStore } from "@/lib/store"
 import type { AccountCollaborator } from "@/lib/types"
+import { PUBLIC_ENV } from "@/lib/env"
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL
+const AUTH_URL = PUBLIC_ENV.AUTH_URL
 
-export function useCollaborators() {
-  const { session, isPending } = useSession()
-  const userId = session?.user?.id ?? null
-  const [collaborators, setCollaborators] = useState<AccountCollaborator[]>([])
-  const [loading, setLoading] = useState(true)
+// Returns everyone sharing a workspace with this account, read from the store (no fetch on mount).
+// `refresh` re-reads the list after an invite, removal or role change.
+export function useCollaborators(): {
+  collaborators: AccountCollaborator[]
+  loading: boolean
+  refresh: () => Promise<void>
+} {
+  const collaborators = useAppStore((s) => s.collaborators)
+  const metadataStatus = useAppStore((s) => s.metadataStatus)
+  const setCollaborators = useAppStore((s) => s.setCollaborators)
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setCollaborators([])
-      setLoading(false)
-      return
-    }
-    setLoading(true)
     try {
-      const res = await fetch(`${AUTH_URL}/api/v1/collaborator`, { credentials: "include" })
-      setCollaborators(res.ok ? ((await res.json()) as AccountCollaborator[]) : [])
+      const res = await fetch(`${AUTH_URL}/api/v1/collaborator`, {
+        credentials: "include",
+      })
+      if (res.ok) setCollaborators((await res.json()) as AccountCollaborator[])
     } catch {
-      setCollaborators([])
-    } finally {
-      setLoading(false)
+      // Keep the current list; the next load corrects it.
     }
-  }, [userId])
+  }, [setCollaborators])
 
-  useEffect(() => {
-    if (isPending) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void refresh()
-  }, [refresh, isPending])
-
-  return { collaborators, loading, refresh }
+  return { collaborators, loading: metadataStatus !== "loaded", refresh }
 }
