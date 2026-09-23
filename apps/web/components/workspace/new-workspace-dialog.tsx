@@ -2,10 +2,15 @@
 
 import { useState, type FormEvent } from "react"
 
-import { ModalShell, btnGhost, btnPrimary } from "@/components/modal/modal-shell"
-import { useAppStore } from "@/lib/store"
-import { displayToast } from "@/lib/toast"
+import {
+  ModalShell,
+  btnGhost,
+  btnPrimary,
+} from "@/components/modal/modal-shell"
+import { useWorkspaceActions } from "@/hooks/use-workspace-actions"
 
+// Dialog that creates a workspace by name.
+// Calls `onCreated` with the new id once the server confirms.
 export function NewWorkspaceDialog({
   onClose,
   onCreated,
@@ -13,15 +18,21 @@ export function NewWorkspaceDialog({
   onClose: () => void
   onCreated?: (id: string) => void
 }) {
-  const createWorkspace = useAppStore((s) => s.createWorkspace)
+  const { create } = useWorkspaceActions()
   const [name, setName] = useState("")
+  const [saving, setSaving] = useState(false)
 
-  const submit = (e: FormEvent) => {
+  // Creates the workspace and closes the dialog on success.
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     const trimmed = name.trim()
-    if (!trimmed) return
-    const workspace = createWorkspace(trimmed)
-    displayToast(`Created workspace "${workspace.name}"`)
+    if (!trimmed || saving) return
+
+    setSaving(true)
+    const workspace = await create(trimmed)
+    setSaving(false)
+    if (!workspace) return
+
     onCreated?.(workspace.id)
     onClose()
   }
@@ -36,22 +47,29 @@ export function NewWorkspaceDialog({
           <button type="button" onClick={onClose} className={btnGhost}>
             Cancel
           </button>
-          <button type="submit" form="new-workspace-form" className={btnPrimary}>
-            Create workspace
+          <button
+            type="submit"
+            form="new-workspace-form"
+            disabled={saving}
+            className={`${btnPrimary} disabled:opacity-50`}
+          >
+            {saving ? "Creating…" : "Create workspace"}
           </button>
         </>
       }
     >
       <form id="new-workspace-form" onSubmit={submit}>
         <label className="block">
-          <div className="text-[11px] uppercase tracking-widest text-mute mb-1.5">Name</div>
+          <div className="text-mute mb-1.5 text-[11px] tracking-widest uppercase">
+            Name
+          </div>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
             required
             placeholder="Acme Corp"
-            className="w-full h-10 bg-canvas border border-hairline rounded-sm px-3 text-sm focus:outline-none focus:border-ink"
+            className="bg-canvas border-hairline focus:border-ink h-10 w-full rounded-sm border px-3 text-sm focus:outline-none"
           />
         </label>
       </form>
