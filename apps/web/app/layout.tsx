@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   },
 }
 
+// Root HTML shell: fonts, theme, tooltips, app metadata, shortcuts and toasts.
+// Wraps every page in the app.
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -28,7 +30,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- brand font is intentionally global, loaded once in the root layout, not per-page */}
         <link
           rel="stylesheet"
