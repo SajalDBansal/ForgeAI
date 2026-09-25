@@ -7,6 +7,8 @@ import { TopBar } from "@/components/layout/topbar"
 import { ProjectsBrowser } from "@/components/projects/projects-browser"
 import { useAppStore } from "@/lib/store"
 
+// Projects page: every project across workspaces, with a "New project" action.
+// Wraps ProjectsBrowser with workspace names shown.
 export function ProjectsView() {
   const projects = useAppStore((s) => s.projects)
 
@@ -17,13 +19,13 @@ export function ProjectsView() {
         actions={
           <Link
             href="/"
-            className="h-9 px-3 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep inline-flex items-center gap-1.5"
+            className="bg-ink text-on-primary hover:bg-ink-deep inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-sm font-medium"
           >
             <Plus className="h-4 w-4" /> New project
           </Link>
         }
       />
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="p-6">
           <ProjectsBrowser
             projects={projects}
@@ -31,7 +33,7 @@ export function ProjectsView() {
             emptyAction={
               <Link
                 href="/"
-                className="h-9 px-4 bg-ink text-on-primary rounded-sm text-sm font-medium hover:bg-ink-deep inline-flex items-center gap-1.5"
+                className="bg-ink text-on-primary hover:bg-ink-deep inline-flex h-9 items-center gap-1.5 rounded-sm px-4 text-sm font-medium"
               >
                 <Plus className="h-4 w-4" /> Create a project
               </Link>
