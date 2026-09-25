@@ -23,13 +23,44 @@ import { Wordmark } from "@/components/brand/wordmark"
 import { UserMenu } from "@/components/layout/user-menu"
 import { ArchiveConfirmDialog } from "@/components/shared/archive-confirm-dialog"
 import { NewWorkspaceDialog } from "@/components/workspace/new-workspace-dialog"
+import { useProjectActions } from "@/hooks/use-project-actions"
 import { useSession } from "@/hooks/use-session"
+import { useWorkspaceActions } from "@/hooks/use-workspace-actions"
 import { useWorkspaces } from "@/hooks/use-workspaces"
 import { useAppStore } from "@/lib/store"
 import { displayToast } from "@/lib/toast"
+import type { Project, Workspace } from "@/lib/types"
 
-type ArchiveTarget = { type: "project" | "workspace"; id: string; name: string }
+type ArchiveTarget =
+  | { type: "project"; entity: Project }
+  | { type: "workspace"; entity: Workspace }
 
+const rowLinkClass =
+  "flex-1 min-w-0 text-left px-3 py-1.5 text-sm text-body hover:bg-surface-soft rounded-sm truncate flex items-center gap-2"
+const rowArchiveClass =
+  "absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity text-mute hover:text-danger rounded-sm hover:bg-surface-soft"
+
+// Filters active projects by the search text, starred first then most recently used, top 6.
+// Feeds the sidebar's "Recent" list.
+function recentProjects(active: Project[], query: string): Project[] {
+  const q = query.toLowerCase()
+  return active
+    .filter(
+      (p) =>
+        !query ||
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? p.initialPrompt ?? "").toLowerCase().includes(q),
+    )
+    .sort((a, b) => {
+      const starDiff = Number(b.starred ?? false) - Number(a.starred ?? false)
+      if (starDiff !== 0) return starDiff
+      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
+    })
+    .slice(0, 6)
+}
+
+// App sidebar: new project, search, workspaces, recent projects and account links.
+// Hidden/shown with Cmd+B via the `forge:toggle-sidebar` event.
 export function Sidebar() {
   const { session } = useSession()
   const signedIn = Boolean(session)
@@ -38,8 +69,8 @@ export function Sidebar() {
   const projects = useAppStore((s) => s.projects)
   const metadataStatus = useAppStore((s) => s.metadataStatus)
   const metadataLoading = signedIn && metadataStatus !== "loaded"
-  const archiveProject = useAppStore((s) => s.archiveProject)
-  const archiveWorkspace = useAppStore((s) => s.archiveWorkspace)
+  const { archive: archiveProject } = useProjectActions()
+  const { archive: archiveWorkspace } = useWorkspaceActions()
   const [query, setQuery] = useState("")
   const [hidden, setHidden] = useState(false)
   const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false)
@@ -54,182 +85,117 @@ export function Sidebar() {
   if (hidden) return null
 
   const activeProjects = projects.filter((p) => !p.archivedAt)
-  const recentProjects = activeProjects
-    .filter(
-      (p) =>
-        !query || p.name.toLowerCase().includes(query.toLowerCase()) || (p.description ?? p.initialPrompt ?? "").toLowerCase().includes(query.toLowerCase())
-    )
-    .sort((a, b) => {
-      const starDiff = Number(b.starred ?? false) - Number(a.starred ?? false)
-      if (starDiff !== 0) return starDiff
-      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
-    })
-    .slice(0, 6)
-
   const activeWorkspaces = workspaces.filter((w) => !w.archivedAt)
-  const visibleWorkspaces = activeWorkspaces.slice(0, 3)
-  const hasMoreWorkspaces = activeWorkspaces.length > 3
 
+  // Archives whichever project or workspace the confirm dialog was opened for.
   const confirmArchive = () => {
     if (!archiveTarget) return
-    if (archiveTarget.type === "project") archiveProject(archiveTarget.id)
-    else archiveWorkspace(archiveTarget.id)
-    displayToast(`Archived "${archiveTarget.name}"`)
+    if (archiveTarget.type === "project")
+      void archiveProject(archiveTarget.entity)
+    else void archiveWorkspace(archiveTarget.entity)
   }
 
   return (
-    <aside className="hidden md:flex w-64 shrink-0 hairline-r flex-col h-screen sticky top-0">
-      <div className="px-5 py-5 hairline-b shrink-0">
+    <aside className="hairline-r sticky top-0 hidden h-screen w-64 shrink-0 flex-col md:flex">
+      <div className="hairline-b shrink-0 px-5 py-5">
         <Link href="/">
           <Wordmark scale={1.1} />
         </Link>
-              </div>
+      </div>
 
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="px-4 mt-4">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="mt-4 px-4">
           <Button
-            onClick={() => router.push("/new")}
-            className="w-full h-10 justify-start gap-2 rounded-sm bg-ink text-on-primary hover:bg-ink-deep"
+            onClick={() => router.push("/")}
+            className="bg-ink text-on-primary hover:bg-ink-deep h-10 w-full justify-start gap-2 rounded-sm"
           >
             <Plus className="h-4 w-4" /> New project
           </Button>
         </div>
 
         {signedIn && (
-          <div className="px-4 mt-3 relative">
-            <Search className="h-3.5 w-3.5 absolute left-6 top-1/2 -translate-y-1/2 text-mute" />
+          <div className="relative mt-3 px-4">
+            <Search className="text-mute absolute top-1/2 left-6 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search projects…"
-              className="h-9 rounded-sm border-hairline pl-8 text-sm shadow-none focus-visible:ring-0 focus-visible:border-ink"
+              className="border-hairline focus-visible:border-ink h-9 rounded-sm pl-8 text-sm shadow-none focus-visible:ring-0"
             />
           </div>
         )}
 
-        <nav className="px-2 mt-5 space-y-0.5 text-sm">
-          <SideLink icon={<FolderGit2 className="h-4 w-4" />} label="Recent" href="/projects" active />
-          <SideLink icon={<LayoutTemplate className="h-4 w-4" />} label="Templates" href="/templates" />
+        <nav className="mt-5 space-y-0.5 px-2 text-sm">
+          <SideLink
+            icon={<FolderGit2 className="h-4 w-4" />}
+            label="Recent"
+            href="/projects"
+            active
+          />
+          <SideLink
+            icon={<LayoutTemplate className="h-4 w-4" />}
+            label="Templates"
+            href="/templates"
+          />
         </nav>
 
-        <div className="px-4 mt-6 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between px-4">
           <Link
             href="/workspaces"
-            className="text-[11px] uppercase tracking-widest text-mute hover:text-ink"
+            className="text-mute hover:text-ink text-[11px] tracking-widest uppercase"
           >
             Workspaces
           </Link>
           <button
             onClick={() => setNewWorkspaceOpen(true)}
-            className="h-5 w-5 grid place-items-center text-mute hover:text-ink rounded-sm hover:bg-surface-soft"
+            className="text-mute hover:text-ink hover:bg-surface-soft grid h-5 w-5 place-items-center rounded-sm"
             aria-label="New workspace"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
-        {!signedIn ? (
-          <p className="mt-1 px-5 py-1.5 text-xs text-mute">Sign in to see your workspaces</p>
-        ) : metadataLoading ? (
-          <RowSkeletons count={3} />
-        ) : activeWorkspaces.length === 0 ? (
-          <p className="mt-1 px-5 py-1.5 text-xs text-mute">No workspaces yet.</p>
-        ) : (
-          <>
-            <ul className="mt-1 px-2 space-y-0.5">
-              {visibleWorkspaces.map((w) => (
-                <li key={w.id} className="group flex items-center">
-                  <Link
-                    href={`/workspaces/${w.id}`}
-                    className="flex-1 min-w-0 text-left px-3 py-1.5 text-sm text-body hover:bg-surface-soft rounded-sm truncate flex items-center gap-2"
-                  >
-                    <span className="text-mute shrink-0">[+]</span>
-                    <span className="truncate">{w.name}</span>
-                  </Link>
-                  {w.deleteable !== false && (
-                    <div className="relative h-6 w-6 shrink-0 grid place-items-center">
-                      <button
-                        onClick={() => setArchiveTarget({ type: "workspace", id: w.id, name: w.name })}
-                        className="absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity text-mute hover:text-danger rounded-sm hover:bg-surface-soft"
-                        aria-label={`Archive ${w.name}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {hasMoreWorkspaces && (
-              <Link
-                href="/workspaces"
-                className="block mt-0.5 px-5 py-1 text-xs text-mute hover:text-ink"
-              >
-                … see more
-              </Link>
-            )}
-          </>
-        )}
+        <WorkspaceList
+          signedIn={signedIn}
+          loading={metadataLoading}
+          workspaces={activeWorkspaces}
+          onArchive={(w) => setArchiveTarget({ type: "workspace", entity: w })}
+        />
 
-        <div className="px-4 mt-6 text-[11px] uppercase tracking-widest text-mute">
+        <div className="text-mute mt-6 px-4 text-[11px] tracking-widest uppercase">
           Recent
         </div>
-        {!signedIn ? (
-          <p className="mt-1 px-5 py-1.5 pb-4 text-xs text-mute">Sign in to see your recent projects</p>
-        ) : metadataLoading ? (
-          <div className="pb-4">
-            <RowSkeletons count={5} />
-          </div>
-        ) : activeProjects.length === 0 ? (
-          <div className="mt-1 px-5 py-1.5 pb-4">
-            <p className="text-xs text-mute">No projects created yet.</p>
-            <button
-              onClick={() => router.push("/new")}
-              className="mt-1 text-xs text-ink underline underline-offset-4"
-            >
-              Create a new project
-            </button>
-          </div>
-        ) : (
-          <ul className="mt-1 px-2 pb-4 space-y-0.5">
-            {recentProjects.map((p) => (
-              <li key={p.id} className="group flex items-center">
-                <Link
-                  href={`/${p.id}`}
-                  className="flex-1 min-w-0 text-left px-3 py-1.5 text-sm text-body hover:bg-surface-soft rounded-sm truncate flex items-center gap-2"
-                >
-                  <span className="text-mute shrink-0">[+]</span>
-                  <span className="truncate">{p.name}</span>
-                </Link>
-                <div className="relative h-6 w-6 shrink-0 grid place-items-center">
-                  {p.starred && (
-                    <Star className="h-3 w-3 text-mute fill-current absolute opacity-100 group-hover:opacity-0 transition-opacity pointer-events-none" />
-                  )}
-                  <button
-                    onClick={() => setArchiveTarget({ type: "project", id: p.id, name: p.name })}
-                    className="absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity text-mute hover:text-danger rounded-sm hover:bg-surface-soft"
-                    aria-label={`Archive ${p.name}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        <RecentProjectList
+          signedIn={signedIn}
+          loading={metadataLoading}
+          hasProjects={activeProjects.length > 0}
+          projects={recentProjects(activeProjects, query)}
+          onArchive={(p) => setArchiveTarget({ type: "project", entity: p })}
+          onCreate={() => router.push("/")}
+        />
       </ScrollArea>
 
-      {newWorkspaceOpen && <NewWorkspaceDialog onClose={() => setNewWorkspaceOpen(false)} />}
+      {newWorkspaceOpen && (
+        <NewWorkspaceDialog onClose={() => setNewWorkspaceOpen(false)} />
+      )}
       {archiveTarget && (
         <ArchiveConfirmDialog
-          name={archiveTarget.name}
+          name={archiveTarget.entity.name}
           onClose={() => setArchiveTarget(null)}
           onConfirm={confirmArchive}
         />
       )}
 
-      <div className="shrink-0 p-3 hairline-t space-y-0.5">
-        <SideLink icon={<Settings className="h-4 w-4" />} label="Settings" href="/settings" />
-        <SideLink icon={<HelpCircle className="h-4 w-4" />} label="Help" href="/help" />
+      <div className="hairline-t shrink-0 space-y-0.5 p-3">
+        <SideLink
+          icon={<Settings className="h-4 w-4" />}
+          label="Settings"
+          href="/settings"
+        />
+        <SideLink
+          icon={<HelpCircle className="h-4 w-4" />}
+          label="Help"
+          href="/help"
+        />
         <div className="mt-3">
           <UserMenu />
         </div>
@@ -238,18 +204,152 @@ export function Sidebar() {
   )
 }
 
+// Sidebar list of up to three workspaces, with an archive button on deletable ones.
+// Shows sign-in, loading and empty states as needed.
+function WorkspaceList({
+  signedIn,
+  loading,
+  workspaces,
+  onArchive,
+}: {
+  signedIn: boolean
+  loading: boolean
+  workspaces: Workspace[]
+  onArchive: (workspace: Workspace) => void
+}) {
+  if (!signedIn)
+    return (
+      <p className="text-mute mt-1 px-5 py-1.5 text-xs">
+        Sign in to see your workspaces
+      </p>
+    )
+  if (loading) return <RowSkeletons count={3} />
+  if (workspaces.length === 0)
+    return (
+      <p className="text-mute mt-1 px-5 py-1.5 text-xs">No workspaces yet.</p>
+    )
+
+  return (
+    <>
+      <ul className="mt-1 space-y-0.5 px-2">
+        {workspaces.slice(0, 3).map((w) => (
+          <li key={w.id} className="group flex items-center">
+            <Link href={`/workspaces/${w.id}`} className={rowLinkClass}>
+              <span className="text-mute shrink-0">[+]</span>
+              <span className="truncate">{w.name}</span>
+            </Link>
+            {w.deleteable !== false && (
+              <div className="relative grid h-6 w-6 shrink-0 place-items-center">
+                <button
+                  onClick={() => onArchive(w)}
+                  className={rowArchiveClass}
+                  aria-label={`Archive ${w.name}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {workspaces.length > 3 && (
+        <Link
+          href="/workspaces"
+          className="text-mute hover:text-ink mt-0.5 block px-5 py-1 text-xs"
+        >
+          … see more
+        </Link>
+      )}
+    </>
+  )
+}
+
+// Sidebar list of recent projects with a star marker and an archive button.
+// Shows sign-in, loading and "create your first project" states as needed.
+function RecentProjectList({
+  signedIn,
+  loading,
+  hasProjects,
+  projects,
+  onArchive,
+  onCreate,
+}: {
+  signedIn: boolean
+  loading: boolean
+  hasProjects: boolean
+  projects: Project[]
+  onArchive: (project: Project) => void
+  onCreate: () => void
+}) {
+  if (!signedIn)
+    return (
+      <p className="text-mute mt-1 px-5 py-1.5 pb-4 text-xs">
+        Sign in to see your recent projects
+      </p>
+    )
+  if (loading) {
+    return (
+      <div className="pb-4">
+        <RowSkeletons count={5} />
+      </div>
+    )
+  }
+  if (!hasProjects) {
+    return (
+      <div className="mt-1 px-5 py-1.5 pb-4">
+        <p className="text-mute text-xs">No projects created yet.</p>
+        <button
+          onClick={onCreate}
+          className="text-ink mt-1 text-xs underline underline-offset-4"
+        >
+          Create a new project
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <ul className="mt-1 space-y-0.5 px-2 pb-4">
+      {projects.map((p) => (
+        <li key={p.id} className="group flex items-center">
+          <Link href={`/${p.id}`} className={rowLinkClass}>
+            <span className="text-mute shrink-0">[+]</span>
+            <span className="truncate">{p.name}</span>
+          </Link>
+          <div className="relative grid h-6 w-6 shrink-0 place-items-center">
+            {p.starred && (
+              <Star className="text-mute pointer-events-none absolute h-3 w-3 fill-current opacity-100 transition-opacity group-hover:opacity-0" />
+            )}
+            <button
+              onClick={() => onArchive(p)}
+              className={rowArchiveClass}
+              aria-label={`Archive ${p.name}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// Placeholder rows shown while workspaces and projects load.
+// Keeps the sidebar from jumping when data arrives.
 function RowSkeletons({ count }: { count: number }) {
   return (
-    <div className="mt-1 px-2 space-y-0.5">
+    <div className="mt-1 space-y-0.5 px-2">
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className="px-3 py-1.5">
-          <Skeleton className="h-4 w-full max-w-[10rem] rounded-sm bg-surface-card" />
+          <Skeleton className="bg-surface-card h-4 w-full max-w-[10rem] rounded-sm" />
         </div>
       ))}
     </div>
   )
 }
 
+// One sidebar navigation link, or a mock button when no href is given.
+// Highlighted when `active`.
 function SideLink({
   icon,
   label,
@@ -261,8 +361,11 @@ function SideLink({
   active?: boolean
   href?: string
 }) {
-  const className = `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-sm text-sm ${active ? "bg-surface-card text-ink font-medium" : "text-body hover:bg-surface-soft"
-    }`
+  const className = `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-sm text-sm ${
+    active
+      ? "bg-surface-card text-ink font-medium"
+      : "text-body hover:bg-surface-soft"
+  }`
 
   if (href) {
     return (
@@ -274,7 +377,10 @@ function SideLink({
   }
 
   return (
-    <button onClick={() => displayToast(`${label} (mock)`)} className={className}>
+    <button
+      onClick={() => displayToast(`${label} (mock)`)}
+      className={className}
+    >
       <span className="text-mute">{icon}</span>
       {label}
     </button>
