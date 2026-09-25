@@ -7,43 +7,100 @@ import { TopBar } from "@/components/layout/topbar"
 import { PageCard, SectionHeader } from "@/components/layout/page-card"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PermanentDeleteDialog } from "@/components/shared/permanent-delete-dialog"
+import { useIsOwner } from "@/hooks/use-is-owner"
+import { useProjectActions } from "@/hooks/use-project-actions"
+import { useWorkspaceActions } from "@/hooks/use-workspace-actions"
 import { useWorkspaces } from "@/hooks/use-workspaces"
 import { useAppStore } from "@/lib/store"
-import { displayToast } from "@/lib/toast"
+import type { Project, Workspace } from "@/lib/types"
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 
+// Returns when an archived item will be permanently deleted (30 days after archiving).
+// Shown next to each archived row.
 function deletesAt(archivedAt: string) {
   return new Date(new Date(archivedAt).getTime() + THIRTY_DAYS_MS)
 }
 
-type DeleteTarget = { type: "project" | "workspace"; id: string; name: string }
+type DeleteTarget =
+  | { type: "project"; entity: Project }
+  | { type: "workspace"; entity: Workspace }
 
+// "Archived <date> · deletes <date>" line for an archived row.
+// Shared by workspace and project rows.
+function ArchivedDates({ archivedAt }: { archivedAt: string }) {
+  return (
+    <div className="text-mute text-[11px]">
+      Archived {new Date(archivedAt).toLocaleDateString()} · deletes{" "}
+      {deletesAt(archivedAt).toLocaleDateString()}
+    </div>
+  )
+}
+
+// Restore and Delete buttons for one archived row.
+// Delete opens the permanent-delete confirmation.
+function RestoreDeleteButtons({
+  onRestore,
+  onDelete,
+}: {
+  onRestore: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        onClick={onRestore}
+        className="border-hairline hover:bg-surface-soft h-8 rounded-sm border px-3 text-xs font-medium"
+      >
+        Restore
+      </button>
+      <button
+        onClick={onDelete}
+        className="border-hairline text-danger hover:bg-danger/10 h-8 rounded-sm border px-3 text-xs font-medium"
+      >
+        Delete
+      </button>
+    </div>
+  )
+}
+
+// Archive page: the user's own archived workspaces and projects with restore and delete.
+// Only owned items are listed, since only owners can act on them.
 export function ArchiveView() {
   const allWorkspaces = useWorkspaces({ includeArchived: true })
   const allProjects = useAppStore((s) => s.projects)
-  const restoreProject = useAppStore((s) => s.restoreProject)
-  const restoreWorkspace = useAppStore((s) => s.restoreWorkspace)
-  const deleteProject = useAppStore((s) => s.deleteProject)
-  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace)
+  const { restore: restoreProject, remove: deleteProject } = useProjectActions()
+  const { restore: restoreWorkspace, remove: deleteWorkspace } =
+    useWorkspaceActions()
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const { ownsWorkspace, ownsProject } = useIsOwner()
 
-  const archivedWorkspaces = allWorkspaces.filter((w) => w.archivedAt)
-  const archivedProjects = allProjects.filter((p) => p.archivedAt)
-  const isEmpty = archivedWorkspaces.length === 0 && archivedProjects.length === 0
+  // A workspace delete cascades to all its projects, so the dialog lists them.
+  const projectsIn = (workspaceId: string) =>
+    allProjects.filter((p) => p.workspaceId === workspaceId)
 
+  // Owned only: the server refuses these actions for anyone else.
+  const archivedWorkspaces = allWorkspaces.filter(
+    (w) => w.archivedAt && ownsWorkspace(w),
+  )
+  const archivedProjects = allProjects.filter(
+    (p) => p.archivedAt && ownsProject(p),
+  )
+  const isEmpty =
+    archivedWorkspaces.length === 0 && archivedProjects.length === 0
+
+  // Permanently deletes whichever item the confirm dialog was opened for.
   const confirmDelete = () => {
     if (!deleteTarget) return
-    if (deleteTarget.type === "project") deleteProject(deleteTarget.id)
-    else deleteWorkspace(deleteTarget.id)
-    displayToast(`Deleted "${deleteTarget.name}"`)
+    if (deleteTarget.type === "project") void deleteProject(deleteTarget.entity)
+    else void deleteWorkspace(deleteTarget.entity)
   }
 
   return (
     <>
       <TopBar breadcrumbs={[{ label: "archive" }]} />
-      <div className="flex-1 min-h-0 overflow-auto">
-        <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="min-h-0 flex-1 overflow-auto">
+        <div className="mx-auto max-w-3xl space-y-6 p-6">
           {isEmpty ? (
             <EmptyState
               icon={<ArchiveIcon className="h-8 w-8" />}
@@ -53,37 +110,30 @@ export function ArchiveView() {
           ) : (
             <>
               <PageCard className="p-5">
-                <SectionHeader label={`Archived workspaces · ${archivedWorkspaces.length}`} />
+                <SectionHeader
+                  label={`Archived workspaces · ${archivedWorkspaces.length}`}
+                />
                 {archivedWorkspaces.length === 0 ? (
-                  <p className="text-sm text-mute">No archived workspaces.</p>
+                  <p className="text-mute text-sm">No archived workspaces.</p>
                 ) : (
-                  <ul className="divide-y divide-hairline -mx-2">
+                  <ul className="divide-hairline -mx-2 divide-y">
                     {archivedWorkspaces.map((w) => (
-                      <li key={w.id} className="px-2 py-3 flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{w.name}</div>
-                          <div className="text-[11px] text-mute">
-                            Archived {new Date(w.archivedAt!).toLocaleDateString()} · deletes{" "}
-                            {deletesAt(w.archivedAt!).toLocaleDateString()}
+                      <li
+                        key={w.id}
+                        className="flex items-center gap-3 px-2 py-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">
+                            {w.name}
                           </div>
+                          <ArchivedDates archivedAt={w.archivedAt!} />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => {
-                              restoreWorkspace(w.id)
-                              displayToast(`Restored "${w.name}"`)
-                            }}
-                            className="h-8 px-3 border border-hairline rounded-sm text-xs font-medium hover:bg-surface-soft"
-                          >
-                            Restore
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ type: "workspace", id: w.id, name: w.name })}
-                            className="h-8 px-3 border border-hairline rounded-sm text-xs font-medium text-danger hover:bg-danger/10"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        <RestoreDeleteButtons
+                          onRestore={() => void restoreWorkspace(w)}
+                          onDelete={() =>
+                            setDeleteTarget({ type: "workspace", entity: w })
+                          }
+                        />
                       </li>
                     ))}
                   </ul>
@@ -91,39 +141,34 @@ export function ArchiveView() {
               </PageCard>
 
               <PageCard className="p-5">
-                <SectionHeader label={`Archived projects · ${archivedProjects.length}`} />
+                <SectionHeader
+                  label={`Archived projects · ${archivedProjects.length}`}
+                />
                 {archivedProjects.length === 0 ? (
-                  <p className="text-sm text-mute">No archived projects.</p>
+                  <p className="text-mute text-sm">No archived projects.</p>
                 ) : (
-                  <ul className="divide-y divide-hairline -mx-2">
+                  <ul className="divide-hairline -mx-2 divide-y">
                     {archivedProjects.map((p) => (
-                      <li key={p.id} className="px-2 py-3 flex items-center gap-3">
-                        <FolderGit2 className="h-4 w-4 text-mute shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{p.name}</div>
-                          <div className="text-[11px] text-mute truncate">{p.stack.join(" / ") || p.initialPrompt}</div>
-                          <div className="text-[11px] text-mute">
-                            Archived {new Date(p.archivedAt!).toLocaleDateString()} · deletes{" "}
-                            {deletesAt(p.archivedAt!).toLocaleDateString()}
+                      <li
+                        key={p.id}
+                        className="flex items-center gap-3 px-2 py-3"
+                      >
+                        <FolderGit2 className="text-mute h-4 w-4 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">
+                            {p.name}
                           </div>
+                          <div className="text-mute truncate text-[11px]">
+                            {p.stack.join(" / ") || p.initialPrompt}
+                          </div>
+                          <ArchivedDates archivedAt={p.archivedAt!} />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => {
-                              restoreProject(p.id)
-                              displayToast(`Restored "${p.name}"`)
-                            }}
-                            className="h-8 px-3 border border-hairline rounded-sm text-xs font-medium hover:bg-surface-soft"
-                          >
-                            Restore
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ type: "project", id: p.id, name: p.name })}
-                            className="h-8 px-3 border border-hairline rounded-sm text-xs font-medium text-danger hover:bg-danger/10"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        <RestoreDeleteButtons
+                          onRestore={() => void restoreProject(p)}
+                          onDelete={() =>
+                            setDeleteTarget({ type: "project", entity: p })
+                          }
+                        />
                       </li>
                     ))}
                   </ul>
@@ -136,7 +181,12 @@ export function ArchiveView() {
 
       {deleteTarget && (
         <PermanentDeleteDialog
-          name={deleteTarget.name}
+          name={deleteTarget.entity.name}
+          projects={
+            deleteTarget.type === "workspace"
+              ? projectsIn(deleteTarget.entity.id)
+              : []
+          }
           onClose={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
         />
