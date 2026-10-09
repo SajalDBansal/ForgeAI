@@ -6,21 +6,32 @@ import { Check, ShieldAlert, X } from "lucide-react"
 import type { Message } from "@/lib/types"
 import { displayToast } from "@/lib/toast"
 
+// Agent permission request with Allow/Deny and an expandable details list.
+// Mock: the decision is only local.
 export function PermissionCard({ m }: { m: Message }) {
-  const [state, setState] = useState<"pending" | "allowed" | "denied">("pending")
+  const [state, setState] = useState<"pending" | "allowed" | "denied">(
+    "pending",
+  )
   const [open, setOpen] = useState(false)
   return (
-    <div className="border border-hairline rounded-sm">
-      <div className="px-3 py-2 flex items-center gap-2">
-        <ShieldAlert className="h-4 w-4 text-ink" />
+    <div className="border-hairline rounded-sm border">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <ShieldAlert className="text-ink h-4 w-4" />
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{m.permissionTitle}</div>
-          <div className="text-[11px] text-mute truncate">{m.permissionDetail}</div>
+          <div className="truncate text-sm font-medium">
+            {m.permissionTitle}
+          </div>
+          <div className="text-mute truncate text-[11px]">
+            {m.permissionDetail}
+          </div>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           {state === "pending" ? (
             <>
-              <button onClick={() => setOpen((o) => !o)} className="text-[11px] px-2 py-1 text-mute hover:text-ink">
+              <button
+                onClick={() => setOpen((o) => !o)}
+                className="text-mute hover:text-ink px-2 py-1 text-[11px]"
+              >
                 View
               </button>
               <button
@@ -28,7 +39,7 @@ export function PermissionCard({ m }: { m: Message }) {
                   setState("denied")
                   displayToast("Denied (mock)")
                 }}
-                className="text-xs px-2.5 py-1 border border-hairline-strong rounded-sm flex items-center gap-1"
+                className="border-hairline-strong flex items-center gap-1 rounded-sm border px-2.5 py-1 text-xs"
               >
                 <X className="h-3 w-3" /> Deny
               </button>
@@ -37,15 +48,18 @@ export function PermissionCard({ m }: { m: Message }) {
                   setState("allowed")
                   displayToast("Allowed — agent proceeding")
                 }}
-                className="text-xs px-2.5 py-1 bg-ink text-on-primary rounded-sm flex items-center gap-1"
+                className="bg-ink text-on-primary flex items-center gap-1 rounded-sm px-2.5 py-1 text-xs"
               >
                 <Check className="h-3 w-3" /> Allow
               </button>
             </>
           ) : (
             <span
-              className={`text-[10px] px-2 py-1 rounded-sm ${state === "allowed" ? "bg-success/15 text-ink" : "bg-surface-card text-mute"
-                }`}
+              className={`rounded-sm px-2 py-1 text-[10px] ${
+                state === "allowed"
+                  ? "bg-success/15 text-ink"
+                  : "bg-surface-card text-mute"
+              }`}
             >
               {state === "allowed" ? "Allowed" : "Denied"}
             </span>
@@ -53,7 +67,7 @@ export function PermissionCard({ m }: { m: Message }) {
         </div>
       </div>
       {open && (
-        <div className="hairline-t px-3 py-2 text-[12px] text-body bg-surface-soft">
+        <div className="hairline-t text-body bg-surface-soft px-3 py-2 text-[12px]">
           <div className="text-mute mb-1">[ details ]</div>
           <ul className="space-y-0.5">
             <li>[+] src/App.tsx</li>
