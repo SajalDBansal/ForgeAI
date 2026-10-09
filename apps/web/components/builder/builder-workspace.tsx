@@ -1,124 +1,172 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Rocket } from "lucide-react"
+import { useMemo, useState } from "react"
 
-import { PROJECT_STATUS_LABEL, type Message, type Project, type ProjectSource, type ProjectStatus, type RepoRef } from "@/lib/types"
-import { SESSION_KEYS, projectNameFromPrompt, readSessionSource, readSessionWorkspaceId, repoForNewProject } from "@/lib/builder-data"
+import { PROJECT_STATUS_LABEL, type ProjectStatus } from "@/lib/types"
 import { useAppStore } from "@/lib/store"
+import { useOpenProject, useProjectStore } from "@/lib/project-store"
+import { useBuildActions } from "@/hooks/use-build-actions"
+import { useDevServer } from "@/hooks/use-dev-server"
+import { useEnsurePod } from "@/hooks/use-ensure-pod"
+import { useOnReconnect } from "@/hooks/use-project-socket"
+import { usePresence } from "@/hooks/use-presence"
+import { useProjectFiles } from "@/hooks/use-project-files"
+import { useSandboxLifecycle } from "@/hooks/use-sandbox-lifecycle"
+import { useSnapshotStatus } from "@/hooks/use-snapshot-status"
+import { canContribute, useWorkspaceRole } from "@/hooks/use-workspace-role"
+import { SnapshotShrinkDialog } from "@/components/builder/snapshot-shrink-dialog"
+import { SandboxNotice } from "@/components/builder/sandbox-notice"
+import { GithubShift } from "@/components/builder/github-shift"
 import { useWorkspaces } from "@/hooks/use-workspaces"
 import { WorkspaceHeader } from "@/components/workspace/workspace-header"
 import { MobileViewSwitch } from "@/components/workspace/mobile-view-switch"
-import { ConversationPanel } from "@/components/builder/conversation-panel"
+import { ChatPanel } from "@/components/builder/chat-panel"
 import { WorkPanel, type WorkTab } from "@/components/builder/work-panel"
-import { DeployDialog } from "@/components/deploy/deploy-dialog"
 
-const DEFAULT_PROMPT = ""
+// Build-mode project page: header, sandbox banners, agent/team chat and the work tabs.
+// Owns the sandbox, dev server, file tree and save status so they survive tab switches.
+export function BuilderWorkspace() {
+  const project = useOpenProject()
+  const status = project.status
+  const updateOpenProject = useProjectStore((s) => s.updateProject)
+  const { sendMessage } = useBuildActions()
 
-export function BuilderWorkspace({
-  projectId,
-  project,
-}: {
-  projectId: string
-  project: Project | null
-}) {
-  const [prompt, setPrompt] = useState(project?.initialPrompt ?? DEFAULT_PROMPT)
-  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? "BUILDING")
-  const [messages, setMessages] = useState<Message[]>([])
   const [tab, setTab] = useState<WorkTab>("preview")
-  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
+  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">(
+    "desktop",
+  )
   const [activeFile, setActiveFile] = useState<string>("")
   const [openFiles, setOpenFiles] = useState<string[]>([])
   const [mobileView, setMobileView] = useState<"chat" | "work">("chat")
   const [chatCollapsed, setChatCollapsed] = useState(false)
   const [composer, setComposer] = useState("")
-  const [previewState, setPreviewState] = useState<"loading" | "ready">(
-    project ? "ready" : "loading"
-  )
-  const [deployOpen, setDeployOpen] = useState(false)
-  const [source, setSource] = useState<ProjectSource>(project?.source ?? "MANUAL")
-  const [attachedRepo, setAttachedRepo] = useState<RepoRef | null>(project?.repo ?? null)
-  const [workspaceId, setWorkspaceId] = useState(project?.workspaceId ?? "")
+  const [previewState, setPreviewState] = useState<"loading" | "ready">("ready")
   const updateProject = useAppStore((s) => s.updateProject)
 
-  useEffect(() => {
-    const seed = project?.initialPrompt ?? sessionStorage.getItem(SESSION_KEYS.prompt) ?? DEFAULT_PROMPT
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time bootstrap from sessionStorage, which isn't readable during SSR/first render.
-    if (!project) setPrompt(seed)
-    setMessages(
-      seed ? [{ id: "m0", role: "user", kind: "text", text: seed, timestamp: new Date().toISOString() }] : []
-    )
-    if (!project) {
-      const { source: bootSource, repo: bootRepo } = readSessionSource()
-      setSource(bootSource)
-      setAttachedRepo(bootRepo)
-      setWorkspaceId(readSessionWorkspaceId() ?? "")
-      setPreviewState("ready")
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId])
+  // Started client-side so the page paints at once; only Preview and Code wait on it.
+  const {
+    state: pod,
+    retry: retryPod,
+    reopen: reopenPod,
+    refresh: refreshPod,
+  } = useEnsurePod(project.id)
 
-  const projectName = useMemo(() => project?.name ?? projectNameFromPrompt(prompt), [project, prompt])
+  // Idle shutdowns and orchestrator restarts; a reset re-ensures the pod.
+  const lifecycle = useSandboxLifecycle(project.id, reopenPod)
+
+  // Held here (not in the Code tab) so switching tabs doesn't re-list every folder.
+  const files = useProjectFiles(project.id, pod.status === "ready")
+
+  // Held here because the dev server outlives any one tab; seeded from the pod.
+  const dev = useDevServer(
+    project.id,
+    pod.status === "ready" ? pod.pod.dev : undefined,
+  )
+
+  // Cloud save status; held here so its question reaches users on any tab.
+  const backup = useSnapshotStatus(
+    project.id,
+    pod.status === "ready" ? pod.pod.snapshot : undefined,
+  )
+
+  // After a reconnect, quietly refresh the pod's seeds and re-list the file tree.
+  useOnReconnect(() => {
+    refreshPod()
+    files.refresh()
+  })
+  const role = useWorkspaceRole(project.workspaceId)
+  const canWrite = canContribute(role)
+
+  // Everyone's presence, plus this tab's own heartbeat.
+  const people = usePresence(project.id, tab, openFiles, activeFile)
 
   const workspaces = useWorkspaces()
   const workspaceName = useMemo(
-    () => workspaces.find((w) => w.id === workspaceId)?.name,
-    [workspaces, workspaceId]
+    () => workspaces.find((w) => w.id === project.workspaceId)?.name,
+    [workspaces, project.workspaceId],
   )
 
-  const repo = useMemo<RepoRef | null>(() => {
-    if (source === "GITHUB") return attachedRepo
-    return attachedRepo ?? repoForNewProject(projectName)
-  }, [source, attachedRepo, projectName])
-
-  const send = (text?: string) => {
+  // Sends a chat message to the agent and marks the project as building.
+  // Restores the composer text if sending fails.
+  const send = async (text?: string) => {
     const t = (text ?? composer).trim()
     if (!t) return
-    const id = String(Date.now())
-    setMessages((prev) => [
-      ...prev,
-      { id, role: "user", kind: "text", text: t, timestamp: new Date().toISOString() },
-    ])
-    setComposer("")
-    setStatus("BUILDING")
-    if (project) updateProject(project.id, { status: "BUILDING", updatedAt: new Date().toISOString() })
+    if (text === undefined) setComposer("")
+    const sent = await sendMessage(t)
+    if (!sent) {
+      if (text === undefined) setComposer(t)
+      return
+    }
+    updateOpenProject({ status: "BUILDING" })
+    updateProject(project.id, {
+      status: "BUILDING",
+      updatedAt: new Date().toISOString(),
+    })
   }
 
+  // Opens a file in the editor, adding it to the open tabs and loading its contents.
+  const openFile = (f: string) => {
+    setActiveFile(f)
+    setOpenFiles((o) => (o.includes(f) ? o : [...o, f]))
+    files.open(f)
+  }
+
+  // Opens a file the agent's knowledge search found (Q6): the Code tab, and the workspace on mobile.
+  const openFromChat = (f: string) => {
+    setTab("code")
+    setMobileView("work")
+    openFile(f)
+  }
+
+  // Closes an editor tab, switching to the last remaining tab if it was active.
+  const closeFile = (f: string) =>
+    setOpenFiles((o) => {
+      const next = o.filter((x) => x !== f)
+      if (activeFile === f && next.length) setActiveFile(next[next.length - 1]!)
+      return next
+    })
+
   return (
-    <div className="h-screen flex flex-col bg-canvas text-ink overflow-hidden">
+    <div className="bg-canvas text-ink flex h-screen flex-col overflow-hidden">
       <WorkspaceHeader
-        projectName={projectName}
+        projectName={project.name}
         workspaceName={workspaceName}
-        repo={repo}
-        showContext
-        statusPill={
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-sm flex items-center gap-1.5 ${statusTone(status)}`}>
-            {status === "BUILDING" && <span className="h-1.5 w-1.5 rounded-full bg-warning pulse-dot" />}
-            {status === "READY" && <span className="h-1.5 w-1.5 rounded-full bg-success" />}
-            {status === "NEEDS_INPUT" && <span className="h-1.5 w-1.5 rounded-full bg-warning" />}
-            {PROJECT_STATUS_LABEL[status]}
-          </span>
-        }
-        primaryAction={
-          <button
-            onClick={() => setDeployOpen(true)}
-            className="h-8 px-3 bg-ink text-on-primary text-xs rounded-sm flex items-center gap-1.5 hover:bg-ink-deep"
-          >
-            <Rocket className="h-3.5 w-3.5" /> Deploy
-          </button>
-        }
+        repo={project.repo ?? null}
+        statusPill={<StatusPill status={status} />}
       />
 
-      <MobileViewSwitch view={mobileView} onChange={setMobileView} workLabel="Workspace" />
+      <SandboxNotice lifecycle={lifecycle} onReopen={reopenPod} />
 
-      <div className="flex-1 flex min-h-0">
+      {/* GitHub moved outside ForgeAI: a banner for everyone, the popup for editors. */}
+      <GithubShift
+        projectId={project.id}
+        podReady={pod.status === "ready"}
+        canWrite={canWrite}
+        isOwner={role === "OWNER"}
+      />
+
+      <MobileViewSwitch
+        view={mobileView}
+        onChange={setMobileView}
+        workLabel="Workspace"
+      />
+
+      <div className="flex min-h-0 flex-1">
         <section
-          className={`${mobileView === "chat" ? "flex" : "hidden"} ${chatCollapsed ? "md:hidden" : "md:flex"} flex-col w-full md:w-[420px] lg:w-[480px] shrink-0 md:hairline-r min-w-0`}
+          className={`${mobileView === "chat" ? "flex" : "hidden"} ${chatCollapsed ? "md:hidden" : "md:flex"} md:hairline-r w-full min-w-0 shrink-0 flex-col md:w-[420px] lg:w-[480px]`}
         >
-          <ConversationPanel messages={messages} composer={composer} setComposer={setComposer} send={send} setMessages={setMessages} />
+          <ChatPanel
+            composer={composer}
+            setComposer={setComposer}
+            send={(t) => void send(t)}
+            people={people}
+            onOpenFile={openFromChat}
+          />
         </section>
 
-        <section className={`${mobileView === "work" ? "flex" : "hidden"} md:flex flex-col flex-1 min-w-0 bg-surface-soft`}>
+        <section
+          className={`${mobileView === "work" ? "flex" : "hidden"} bg-surface-soft min-w-0 flex-1 flex-col md:flex`}
+        >
           <WorkPanel
             tab={tab}
             setTab={setTab}
@@ -128,32 +176,47 @@ export function BuilderWorkspace({
             setDevice={setDevice}
             previewState={previewState}
             setPreviewState={setPreviewState}
+            pod={pod}
+            onRetryPod={retryPod}
+            dev={dev}
+            files={files}
             activeFile={activeFile}
-            setActiveFile={(f) => {
-              setActiveFile(f)
-              setOpenFiles((o) => (o.includes(f) ? o : [...o, f]))
-            }}
+            setActiveFile={openFile}
             openFiles={openFiles}
-            closeFile={(f) =>
-              setOpenFiles((o) => {
-                const next = o.filter((x) => x !== f)
-                if (activeFile === f && next.length) setActiveFile(next[next.length - 1]!)
-                return next
-              })
-            }
-            prompt={prompt}
-            projectName={projectName}
-            status={status}
-            messages={messages}
+            backup={backup}
+            closeFile={closeFile}
           />
         </section>
       </div>
 
-      {deployOpen && <DeployDialog projectName={projectName} onClose={() => setDeployOpen(false)} />}
+      <SnapshotShrinkDialog backup={backup} canWrite={canWrite} />
     </div>
   )
 }
 
+// Header pill showing the project's status with a colored dot.
+// Building pulses; ready is green; needs-input is amber.
+function StatusPill({ status }: { status: ProjectStatus }) {
+  return (
+    <span
+      className={`flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-[10px] ${statusTone(status)}`}
+    >
+      {status === "BUILDING" && (
+        <span className="bg-warning pulse-dot h-1.5 w-1.5 rounded-full" />
+      )}
+      {status === "READY" && (
+        <span className="bg-success h-1.5 w-1.5 rounded-full" />
+      )}
+      {status === "NEEDS_INPUT" && (
+        <span className="bg-warning h-1.5 w-1.5 rounded-full" />
+      )}
+      {PROJECT_STATUS_LABEL[status]}
+    </span>
+  )
+}
+
+// Maps a project status to the pill's color classes.
+// Used by StatusPill.
 function statusTone(s: ProjectStatus) {
   switch (s) {
     case "READY":
