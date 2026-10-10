@@ -1,77 +1,90 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import Link from "next/link"
 
-import type { Project, ProjectMode } from "@/lib/types"
-import { useAppStore, useProject } from "@/lib/store"
-import { SESSION_KEYS } from "@/lib/builder-data"
+import { useAppStore } from "@/lib/store"
+import { useProjectStore } from "@/lib/project-store"
+import { useLoadProject } from "@/hooks/use-load-project"
+import { ProjectSocketProvider } from "@/hooks/use-project-socket"
 import { BuilderWorkspace } from "@/components/builder/builder-workspace"
 import { PlanWorkspace } from "@/components/builder-plan/plan-workspace"
 
-export function ProjectWorkspace({
-  projectId,
-  project: serverProject,
-}: {
-  projectId: string
-  project: Project | null
-}) {
-  const storeProject = useProject(projectId)
-  const project = serverProject ?? storeProject ?? null
+// Full-page error shown when a project can't be opened.
+// Offers a link back to the dashboard.
+function ProjectOpenError({ message }: { message: string | null }) {
+  return (
+    <div className="bg-canvas flex min-h-screen items-center justify-center px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-ink text-2xl font-bold">
+          Couldn&apos;t open this project
+        </h1>
+        <p className="text-body mt-2 text-sm">
+          {message ??
+            "This project doesn't exist, or you don't have access to it."}
+        </p>
+        <Link
+          href="/"
+          className="text-ink mt-4 inline-block text-sm underline underline-offset-4"
+        >
+          Back to dashboard
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// Loads a project and renders the Plan or Build workspace inside its live socket.
+// Shows a loading screen until the project is in the store.
+export function ProjectWorkspace({ projectId }: { projectId: string }) {
+  useLoadProject(projectId)
+  const status = useProjectStore((s) => s.status)
+  const error = useProjectStore((s) => s.error)
+  const mode = useProjectStore((s) =>
+    s.projectId === projectId ? s.project?.mode : undefined,
+  )
+  const updateOpenProject = useProjectStore((s) => s.updateProject)
   const updateProject = useAppStore((s) => s.updateProject)
   const touchProject = useAppStore((s) => s.touchProject)
 
-  const [mode, setMode] = useState<ProjectMode>(project?.mode ?? "BUILD")
-
   useEffect(() => {
-    if (project) touchProject(project.id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId])
+    touchProject(projectId)
+  }, [projectId, touchProject])
 
-  useEffect(() => {
-    const override = sessionStorage.getItem(`forge.mode.${projectId}`)
-    if (override === "BUILD" || override === "PLAN") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- a project's mode can be overridden for this tab only (e.g. after "Approve & build"), which lives in sessionStorage and isn't readable during SSR/first render.
-      setMode(override)
-      return
-    }
-    if (project) {
-      setMode(project.mode)
-      return
-    }
-    const stored = sessionStorage.getItem(SESSION_KEYS.mode)
-    if (stored === "BUILD" || stored === "PLAN") setMode(stored)
-  }, [projectId, project])
+  if (status === "error" || (status === "ready" && !mode)) {
+    return <ProjectOpenError message={error} />
+  }
 
-  if (!project && projectId !== "new") {
+  // Every section reads the project from the store, so wait until it's loaded.
+  if (status !== "ready" || !mode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-        <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-ink">Project not found</h1>
-          <p className="mt-2 text-sm text-body">
-            This project doesn&apos;t exist, or was created in a different browser session.
-          </p>
-          <Link href="/" className="mt-4 inline-block text-sm text-ink underline underline-offset-4">
-            Back to dashboard
-          </Link>
-        </div>
+      <div className="bg-canvas text-mute flex min-h-screen items-center justify-center text-sm">
+        Loading project…
       </div>
     )
   }
 
+  // One live socket per project feeds every section through the project store.
   if (mode === "PLAN") {
     return (
-      <PlanWorkspace
-        projectId={projectId}
-        project={project}
-        onApproveBuild={() => {
-          sessionStorage.setItem(`forge.mode.${projectId}`, "BUILD")
-          setMode("BUILD")
-          if (project) updateProject(project.id, { mode: "BUILD", status: "BUILDING", updatedAt: new Date().toISOString() })
-        }}
-      />
+      <ProjectSocketProvider projectId={projectId}>
+        <PlanWorkspace
+          onApproveBuild={() => {
+            const patch = { mode: "BUILD", status: "BUILDING" } as const
+            updateOpenProject(patch)
+            updateProject(projectId, {
+              ...patch,
+              updatedAt: new Date().toISOString(),
+            })
+          }}
+        />
+      </ProjectSocketProvider>
     )
   }
 
-  return <BuilderWorkspace projectId={projectId} project={project} />
+  return (
+    <ProjectSocketProvider projectId={projectId}>
+      <BuilderWorkspace />
+    </ProjectSocketProvider>
+  )
 }
