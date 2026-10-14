@@ -1,0 +1,58 @@
+name: forgeai-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-starter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-starter}
+      POSTGRES_DB: ${POSTGRES_DB:-turbo_starter}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-starter}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # The project knowledge graph for apps/rag-service (work plan stage Q). 2026.01+ is needed for
+  # vector search filtered by project. Browser UI: http://localhost:7474
+  neo4j:
+    image: neo4j:2026.09-community
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-forgeai-dev-password}
+      # Small on purpose: a dev machine, a handful of projects.
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  neo4j_data:
+    driver: local
