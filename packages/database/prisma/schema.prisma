@@ -1,4 +1,4 @@
-// Prisma schema for the turbo-starter database package.
+// Prisma schema for the ForgeAI database package (@forgeAI/database).
 // Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -23,7 +23,13 @@ model User {
   collaborators   Collaborator[]
   connections     Connection[]
   workspaces      Workspace[]
+  createdProjects Project[]      @relation("ProjectCreator")
+  devCommandsSet  Project[]      @relation("ProjectDevCommandSetter")
   sentInvitations Invitation[]   @relation("InvitationInviter")
+  teamMessages    TeamMessage[]
+  chatMessages    ChatMessage[]
+  teamChatReads   TeamChatRead[]
+  agentRuns       AgentRun[]
 
   @@unique([email])
   @@map("user")
@@ -177,6 +183,7 @@ model Workspace {
   collaborators Collaborator[]
   templates     Template[]
   invitations   Invitation[]
+  usageEvents   UsageEvent[]
 
   @@index([name])
   @@index([userId])
@@ -201,38 +208,344 @@ enum ProjectSource {
 }
 
 model Project {
-  id            String        @id @default(cuid())
-  name          String
-  description   String?
-  initialPrompt String
-  status        ProjectStatus
-  starred       Boolean       @default(false)
-  stack         String[]
-  mode          ProjectMode
-  source        ProjectSource
-  repoId        String?
-  workspaceId   String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  lastUsed      DateTime      @default(now())
-  archivedAt    DateTime?
+  id             String        @id @default(cuid())
+  name           String
+  description    String?
+  initialPrompt  String
+  status         ProjectStatus
+  starred        Boolean       @default(false)
+  stack          String[]
+  mode           ProjectMode
+  source         ProjectSource
+  repoId         String?
+  templateId     String?
+  devCommand     String?
+  devPort        Int?
+  devCommandById String?
+  createdById    String?
+  workspaceId    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  lastUsed       DateTime      @default(now())
+  archivedAt     DateTime?
+  teamMessageSeq Int           @default(0)
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  repo      RepoRef?  @relation(fields: [repoId], references: [id], onDelete: SetNull)
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repo         RepoRef?  @relation(fields: [repoId], references: [id], onDelete: SetNull)
+  template     Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy    User?     @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  devCommandBy User?     @relation("ProjectDevCommandSetter", fields: [devCommandById], references: [id], onDelete: SetNull)
 
-  connections ProjectConnection[]
+  connections   ProjectConnection[]
+  messages      ChatMessage[]
+  secrets       ProjectSecret[]
+  commits       ProjectCommit[]
+  info          ProjectInfo?
+  teamMessages  TeamMessage[]
+  teamChatReads TeamChatRead[]
+  agentRuns     AgentRun[]
+  usageEvents   UsageEvent[]
+  chatSummary   ProjectChatSummary?
 
   @@index([workspaceId])
+  @@index([templateId])
+  @@index([createdById])
+}
+
+// --------------- PROJECT BUILD ---------------
+enum ChatRole {
+  USER
+  AGENT
+  SYSTEM
+}
+
+enum ChatMessageKind {
+  TEXT
+  TASK
+  QUESTION
+  PERMISSION
+  FILES
+  WARNING
+  SUCCESS
+  REPO_PUSH
+  PR_PROMPT
+}
+
+model ChatMessage {
+  id        String          @id @default(cuid())
+  projectId String
+  role      ChatRole
+  kind      ChatMessageKind @default(TEXT)
+  content   String          @default("")
+  payload   Json?
+  authorId  String?
+  /// The agent run this message belongs to (I2); null for plain chat.
+  runId     String?
+  createdAt DateTime        @default(now())
+
+  project Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  run     AgentRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([authorId])
+  @@index([runId])
+}
+
+// --------------- TEAM CHAT ---------------
+model TeamMessage {
+  id         String   @id @default(cuid())
+  projectId  String
+  seq        Int
+  authorId   String?
+  contentEnc String
+  mentions   String[] @default([])
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, seq])
+  @@index([authorId])
+}
+
+model TeamChatRead {
+  projectId   String
+  userId      String
+  lastReadSeq Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
+
+enum SecretScope {
+  RUNTIME
+  BUILD
+}
+
+model ProjectSecret {
+  id        String      @id @default(cuid())
+  projectId String
+  key       String
+  valueEnc  String
+  scope     SecretScope @default(RUNTIME)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+}
+
+enum CommitSource {
+  FORGEAI
+  GITHUB
+  LEGACY
+}
+
+model ProjectCommit {
+  id           String       @id @default(cuid())
+  projectId    String
+  hash         String
+  author       String
+  prompt       String
+  filesChanged Int          @default(0)
+  additions    Int          @default(0)
+  deletions    Int          @default(0)
+  isHead       Boolean      @default(false)
+  /// FORGEAI and GITHUB rows are git commits — `hash` is the commit id, the same on
+  /// GitHub. LEGACY rows are tar archives from before the project used GitHub.
+  source       CommitSource @default(LEGACY)
+  /// The GitHub account that authored it.
+  authorLogin  String?
+  /// Per-file { path, additions, deletions }, from git.
+  files        Json?
+  createdAt    DateTime     @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+/// The rolling summary of a project's agent chat (I4a/I5b): old exchanges folded by the fast model
+/// so a run's context stays within budget. Messages after `throughCreatedAt` are sent word for word.
+model ProjectChatSummary {
+  projectId        String   @id
+  text             String
+  /// The newest chat message folded into `text`.
+  throughMessageId String
+  throughCreatedAt DateTime
+  updatedAt        DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectInfo {
+  projectId String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// --------------- AGENT (03 I2, design in 10 §4) ---------------
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  WAITING_INPUT
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+/// One request to the agent. It belongs to the project, like its sandbox and chat; the
+/// person's message and the agent's replies point at it through ChatMessage.runId.
+model AgentRun {
+  id            String         @id @default(cuid())
+  projectId     String
+  /// Null once the person's account is gone.
+  requestedById String?
+  status        AgentRunStatus @default(QUEUED)
+  model         String?
+  /// How many times a worker has picked it up (a retry after a crash adds one).
+  attempts      Int            @default(0)
+  error         String?
+  /// The run's messages as the model saw them (pi's transcript, I5b), to carry on after an answer
+  /// or a restart, and for undo and history. Written by the worker (I6).
+  transcript    Json?
+  createdAt     DateTime       @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  updatedAt     DateTime       @updatedAt
+
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requestedBy User?   @relation(fields: [requestedById], references: [id], onDelete: SetNull)
+
+  steps       AgentStep[]
+  fileChanges AgentFileChange[]
+  checkpoints AgentCheckpointArtifact[]
+  messages    ChatMessage[]
+  usageEvents UsageEvent[]
+
+  @@index([projectId, createdAt])
+  @@index([status])
+  @@index([requestedById])
+}
+
+/// One tool call inside a run, in order.
+model AgentStep {
+  id            String   @id @default(cuid())
+  runId         String
+  /// 1, 2, 3… within the run.
+  seq           Int
+  tool          String
+  input         Json?
+  /// A short summary, not the full output.
+  outputSummary String?
+  durationMs    Int?
+  createdAt     DateTime @default(now())
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, seq])
+}
+
+/// Durable Git objects for an agent checkpoint. The DB row is the index; R2 holds the bundle bytes.
+model AgentCheckpointArtifact {
+  id        String   @id @default(cuid())
+  runId     String
+  projectId String
+  /// Matches AgentStep.seq: 0 before the run, -1 after the run.
+  seq       Int
+  commit    String
+  key       String   @unique
+  sha256    String
+  bytes     Int
+  createdAt DateTime @default(now())
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, seq])
+  @@index([projectId])
+}
+
+/// The same three actions as the chat's file list (ChatMessage payload `files`).
+enum FileChangeAction {
+  CREATED
+  UPDATED
+  DELETED
+}
+
+/// A file a run changed (for undo, I11, and the chat's file list).
+model AgentFileChange {
+  id        String           @id @default(cuid())
+  runId     String
+  path      String
+  action    FileChangeAction
+  additions Int              @default(0)
+  deletions Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+enum UsageKind {
+  LLM_TOKENS
+  EMBEDDING_TOKENS
+  SANDBOX_SECONDS
+}
+
+/// What something cost, for billing. Kept when its project or run is deleted (the links
+/// go null), so a workspace's totals stay right; gone only with the workspace.
+model UsageEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  projectId   String?
+  runId       String?
+  kind        UsageKind
+  /// LLM_TOKENS and EMBEDDING_TOKENS only.
+  model       String?
+  tokensIn    Int       @default(0)
+  tokensOut   Int       @default(0)
+  /// SANDBOX_SECONDS only.
+  seconds     Int       @default(0)
+  /// Millionths of a US dollar, so sums never round.
+  costMicros  Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  run       AgentRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([projectId])
+  @@index([runId])
 }
 
 // --------------- CONNECTORS ---------------
 model RepoRef {
-  id           String      @id @default(cuid())
-  owner        String
-  name         String
-  branch       String
-  connectionId String?
-  connection   Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  id            String      @id @default(cuid())
+  owner         String
+  name          String
+  branch        String
+  managed       Boolean     @default(false)
+  /// GitHub's id for the repository, as a string (a BigInt does not survive JSON).
+  /// The name can change on GitHub; this cannot — tokens and webhooks go by it.
+  githubRepoId  String?     @unique
+  /// The GitHub commit this project's files are based on: the last one ForgeAI pushed
+  /// or brought in. GitHub's branch being anything else is a "shift" (07-GITHUB-VERSION-CONTROL §4).
+  lastKnownSha  String?
+  /// What GitHub's branch pointed at when last checked, and when.
+  githubHeadSha String?
+  checkedAt     DateTime?
+  connectionId  String?
+  connection    Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
 
   projects Project[]
 
@@ -255,23 +568,105 @@ model ProjectConnection {
 
 // --------------- TEMPLATES ---------------
 model Template {
-  id              String   @id @default(cuid())
-  name            String
+  id              String     @id @default(cuid())
+  name            String     @unique
   description     String
   tag             String
   version         String
   author          String
   license         String
-  uses            Int      @default(0)
+  uses            Int        @default(0)
   storageRef      String
+  /// The image the current version boots from, as the provider names it (was e2bTemplateId).
+  imageRef        String
+  /// Which sandbox provider that image was built for.
+  provider        String     @default("e2b")
+  contentHash     String
+  devCommand      String?
+  devPort         Int?
+  installCommand  String?
   previewImageUrl String?
   metadata        Json
-  createdAt       DateTime @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  workspaceId     String?
+  workspace       Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  /// null means the template is public; otherwise it is private to one workspace.
-  workspaceId String?
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  versions TemplateVersion[]
+  projects Project[]
 
   @@index([tag])
   @@index([workspaceId])
+}
+
+model TemplateVersion {
+  id          String   @id @default(cuid())
+  version     String
+  storageRef  String
+  /// The image this version boots from, as the provider names it (was e2bTemplateId).
+  imageRef    String
+  /// Which sandbox provider the image was built for.
+  provider    String   @default("e2b")
+  /// The exact Dockerfile the image was built from, so it can be rebuilt elsewhere. Null before F8.
+  dockerfile  String?
+  contentHash String
+  createdAt   DateTime @default(now())
+
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+}
+
+enum BackgroundJobStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+/// Durable outbox and execution record. No foreign keys: deletion jobs must outlive their targets.
+model BackgroundJob {
+  id          String              @id @default(cuid())
+  queue       String
+  payload     Json
+  status      BackgroundJobStatus @default(PENDING)
+  attempts    Int                 @default(0)
+  availableAt DateTime            @default(now())
+  createdAt   DateTime            @default(now())
+  finishedAt  DateTime?
+  /// A fixed error code, never a provider response or raw payload.
+  errorCode   String?
+
+  @@index([queue, status, availableAt])
+  @@index([status, finishedAt])
+}
+
+/// Security history survives deletion of the resource it describes, subject to retention.
+model SecurityAuditEvent {
+  id          String   @id
+  action      String
+  actorId     String?
+  workspaceId String?
+  projectId   String?
+  targetId    String?
+  role        String?
+  occurredAt  DateTime
+  recordedAt  DateTime @default(now())
+
+  @@index([workspaceId, occurredAt])
+  @@index([projectId, occurredAt])
+  @@index([occurredAt])
+}
+
+/// Stable name/owner across uncertain GitHub create responses; never adopts an unrelated repo.
+model GithubRepositoryIntent {
+  projectId    String   @id
+  owner        String
+  name         String
+  connectionId String
+  attemptedAt  DateTime?
+  githubRepoId String?
+  createdAt    DateTime @default(now())
+
+  @@unique([owner, name])
 }
