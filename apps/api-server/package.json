@@ -14,7 +14,6 @@
     "jobs": "tsx src/scripts/background-jobs.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "github:check": "tsx src/scripts/check-github-app.ts",
     "secrets:rotate": "tsx src/scripts/rotate-encryption-keys.ts",
     "format": "prettier --write \"**/*.ts\"",
     "clean": "rm -rf dist"

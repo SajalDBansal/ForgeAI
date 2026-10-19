@@ -96,6 +96,5 @@ bun run build
 ```
 
 Python tests and retrieval evaluations are documented in the
-[RAG README](apps/rag-service/README.md#checks). Model/provider smoke checks and
-template publication contact external services; they are separate from the
-workspace's static checks and builds.
+[RAG README](apps/rag-service/README.md#checks). Template publication contacts
+external services and runs separately from the workspace's static checks and builds.

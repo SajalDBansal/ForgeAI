@@ -75,5 +75,5 @@ bun run --cwd apps/api-server build
 ```
 
 After building, `bun run --cwd apps/api-server start` starts the compiled server.
-Administrative scripts for job retries, GitHub checks and encryption-key rotation
+Administrative scripts for job retries and encryption-key rotation
 are listed in [package.json](package.json); inspect their arguments before running them.

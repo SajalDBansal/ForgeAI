@@ -9,15 +9,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write \"**/*.ts\"",
-    "check": "tsx --env-file=.env scripts/check-agent.ts"
+    "format": "prettier --write \"**/*.ts\""
   },
   "devDependencies": {
     "@forgeAI/eslint-config": "*",
     "@forgeAI/typescript-config": "*",
     "@types/node": "26.4.0",
     "eslint": "9.39.5",
-    "tsx": "4.23.13",
     "typescript": "5.9.3"
   },
   "peerDependencies": {

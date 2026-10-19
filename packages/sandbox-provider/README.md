@@ -24,14 +24,13 @@ await provider.runPodCommand(pod.sandboxId, "git --version", {
 
 ## What's in it
 
-| File                         | What                                                                                                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/provider.ts`            | **The contract.** `SandboxProvider` (every method ForgeAI uses), its types, `SandboxCapabilities`, and `SandboxProviderConfig`                                     |
-| `src/index.ts`               | `createSandboxProvider(config)`, the types, the errors, and `createR2Client`                                                                                       |
-| `src/errors.ts`              | Provider-neutral errors: `FileNotFoundError`, `FileTooLargeError`, `BinaryFileError`, `ProviderCapacityError` (the provider is full)                               |
-| `src/e2b/`                   | **The E2B adapter.** `index.ts` binds the API key and environment; `sandbox.ts`, `process.ts`, `terminal.ts`, `template.ts` and `connection.ts` hold the E2B calls |
-| `src/lib/r2.ts`              | `createR2Client`: uploads, presigned URLs, head and copy                                                                                                           |
-| `scripts/verify-provider.ts` | A smoke test: create a sandbox on the configured provider, run a command, kill it                                                                                  |
+| File              | What                                                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/provider.ts` | **The contract.** `SandboxProvider` (every method ForgeAI uses), its types, `SandboxCapabilities`, and `SandboxProviderConfig`                                     |
+| `src/index.ts`    | `createSandboxProvider(config)`, the types, the errors, and `createR2Client`                                                                                       |
+| `src/errors.ts`   | Provider-neutral errors: `FileNotFoundError`, `FileTooLargeError`, `BinaryFileError`, `ProviderCapacityError` (the provider is full)                               |
+| `src/e2b/`        | **The E2B adapter.** `index.ts` binds the API key and environment; `sandbox.ts`, `process.ts`, `terminal.ts`, `template.ts` and `connection.ts` hold the E2B calls |
+| `src/lib/r2.ts`   | `createR2Client`: uploads, presigned URLs, head and copy                                                                                                           |
 
 ## The interface in short
 
@@ -68,10 +67,6 @@ From the repository root:
 bun run --cwd packages/sandbox-provider typecheck
 bun run --cwd packages/sandbox-provider lint
 ```
-
-The optional [verify-provider script](scripts/verify-provider.ts) creates a real
-sandbox, runs a command and attempts cleanup. Inspect its required environment
-before running it; it uses provider resources.
 
 Detached process behavior is implemented in [src/e2b/process.ts](src/e2b/process.ts).
 Template Dockerfiles install system packages before switching to the project user;

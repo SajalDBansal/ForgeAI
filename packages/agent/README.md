@@ -102,8 +102,3 @@ From the repository root:
 bun run --cwd packages/agent typecheck
 bun run --cwd packages/agent lint
 ```
-
-For the optional live provider smoke check, copy `.env.example` to `.env` in this
-package and run `bun run check` from this directory. It makes real model requests
-for streaming, tools, transcript continuation, cancellation and the fast model,
-and may incur charges. The script is [scripts/check-agent.ts](scripts/check-agent.ts).
