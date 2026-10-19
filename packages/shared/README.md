@@ -1,43 +1,53 @@
-# @workspace/shared
+# @forgeAI/shared
 
-The single source of truth for cross-service contracts. Every TypeScript type and every runtime
-`zod` validation schema that more than one service needs lives here — `core-backend`,
-`core-trading-engine`, `database-engine`, `ws-server` and `ws-index-poller` all depend on this
-package instead of redefining these shapes locally.
+Cross-service TypeScript types, Zod schemas and common utilities. HTTP payloads,
+Redis messages and WebSocket events use these contracts so producers and consumers
+agree on their shape. The package's only external runtime dependency is Zod.
 
-## What's in here
+## Contents
 
-**Types** (`src/types/`):
+| Path                                                                                                | Responsibility                                                          |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [src/types](src/types)                                                                              | Product entities; project, sandbox, terminal, presence and agent events |
+| [src/validations](src/validations)                                                                  | Request and message schemas                                             |
+| [src/lib/ticket.ts](src/lib/ticket.ts)                                                              | Signed scoped tickets and verification                                  |
+| [src/lib/access-version.ts](src/lib/access-version.ts)                                              | Project access-version contracts                                        |
+| [src/lib/agent-live.ts](src/lib/agent-live.ts) and [agent-run-state.ts](src/lib/agent-run-state.ts) | Agent state and live revision handling                                  |
+| [src/lib/secret-redaction.ts](src/lib/secret-redaction.ts) and [logging.ts](src/lib/logging.ts)     | Redaction and structured logging helpers                                |
+| [src/lib/http-security.ts](src/lib/http-security.ts)                                                | Shared HTTP security helpers                                            |
+| [src/lib/health.ts](src/lib/health.ts)                                                              | Readiness probes and response helpers                                   |
+| [src/lib/sandbox-plan.ts](src/lib/sandbox-plan.ts)                                                  | Sandbox plan limits and validation                                      |
+| [src/index.ts](src/index.ts)                                                                        | Public exports                                                          |
 
-| File | Covers |
-|---|---|
-| `engine.ts` | `EVENT_SUBJECT` enum, `EVENT_REJECT_CODES` |
-| `engine-payload.ts` / `engine-response.ts` | Per-event request payload / response shapes for every `EVENT_SUBJECT` the trading engine handles |
-| `market.ts` / `order.ts` / `position.ts` / `balance.ts` | Core trading domain types |
-| `depth.ts` | Order-book depth delta shapes |
-| `snapshot.ts` | `EngineSnapshot` shape used for R2 crash-recovery snapshots |
-| `redis.ts` | `REDIS_STREAMS` / `CONSUMER_GROUPS` name constants |
-| `idempotency.ts` | Idempotency-key request/response types |
-| `ws-poller.ts` | Health-state shape used by `ws-index-poller` |
-| `backend-payload.ts` / `backend-request.ts` | `core-backend` <-> engine request/response contracts |
-| `database-engine.ts` | Types specific to persisting the engine's update bundle |
-
-**Validations** (`src/validations/`): `zod` schemas — `asset.ts`, `auth.ts`, `market.ts`,
-`order.ts` — used by `core-backend` to validate REST input before it's turned into an engine
-request.
+The filesystem contracts include `PROJECT_ROOT` (`/home/user/app`), path limits and
+excluded folders. Template and snapshot contracts keep image names and storage
+keys consistent across services.
 
 ## Usage
 
 ```ts
-import { EVENT_SUBJECT, type CreateOrderRequestPayload } from "@workspace/shared";
-import { createOrderSchema } from "@workspace/shared";
+import {
+  PROJECT_ROOT,
+  sandboxEventsChannel,
+  type TerminalCommand,
+} from "@forgeAI/shared"
 ```
 
-Everything is re-exported from `src/index.ts`, so a single `@workspace/shared` import covers
-types and validations alike.
+The package also exports `types/*`, `validations/*` and `lib/*` subpaths. Use
+browser-compatible entries in frontend code; helpers that use Node facilities,
+such as ticket signing, belong on the server. Callers supply any service clients
+needed by utilities such as readiness checks.
 
-## Notes
+Validate untrusted boundary inputs with the matching schemas. TypeScript types
+alone do not validate a received request or Redis message.
 
-- This package has no runtime dependency beyond `zod` — it's pure types + schemas, no I/O.
-- If you're adding a new event subject, payload or response shape, it belongs here first; the
-  engine, backend and any consumer should import it rather than declaring their own copy.
+## Checks
+
+Install dependencies from the [repository root](../../README.md), then run:
+
+```powershell
+bun run --cwd packages/shared typecheck
+bun run --cwd packages/shared lint
+```
+
+This is a source package with no standalone server or build output.
