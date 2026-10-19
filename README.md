@@ -1,95 +1,101 @@
-# turbo-starter
+# ForgeAI
 
-A Turborepo starter with Next.js, Express, Fastify, a Commander CLI, Prisma, and shadcn/ui — all packages are ESM (`"type": "module"`).
+A browser development workspace with an editor, terminal, preview and AI agent.
+Projects run in E2B sandboxes; ForgeAI's services manage files, saves, collaboration
+and model-driven code changes.
 
-## Apps
+The application is under active development. Starter-based projects and agent work
+are the main workflows; the complete GitHub import/runtime journey is still being
+finished. Deployment/export UI includes demonstration behavior, and application
+deployment infrastructure is not yet included.
 
-- `apps/web` — Next.js 16 app, styled with `@forgeAI/ui` (shadcn/ui + Tailwind v4), reads from `@forgeAI/database` directly.
-- `apps/api` — Express 5 app (ESM, run with `tsx`/compiled with `tsc`), exposes a small REST API backed by `@forgeAI/database`.
-- `apps/api-fast` — Fastify 5 app (same ESM/`tsx`/`tsc` setup as `api`), same routes backed by `@forgeAI/database`, on a separate port.
-- `apps/cli` — empty Commander CLI scaffold (ESM). `inquirer` and `chalk` are installed as dependencies but not wired up yet — pull them into `src/index.ts` when adding real commands/prompts.
-- `apps/docs` — Vite + React 19 SPA, styled with the same `@forgeAI/ui` (shadcn/ui + Tailwind v4) library as `web`.
+## Local setup
+
+Use Bun 1.4.0 (the version pinned in [package.json](package.json)), Node.js 20 or
+newer, Docker with Compose, and Python 3.11+ for the RAG service. Sandbox projects
+also need configured E2B and R2 accounts; agent and retrieval features need model
+provider credentials.
+
+1. Install workspace dependencies from this directory:
+
+   ```powershell
+   bun install --frozen-lockfile
+   ```
+
+2. Copy each service's `.env.example` to `.env`, plus
+   [packages/database/.env.example](packages/database/.env.example). Use the app
+   guides below to configure provider credentials and service addresses. Match
+   `DATABASE_URL` and `REDIS_URL` across consumers, `WS_TICKET_SECRET` between API
+   and WebSocket services, `ORCHESTRATOR_TOKEN` across its callers, and
+   `INTERNAL_API_TOKEN` between API and agent worker. Match the RAG URL and secret
+   between the RAG service and its callers. Keep `.env` files local.
+
+3. Start local data services and apply the committed database migrations:
+
+   ```powershell
+   docker compose -f infra/docker-compose.dev.yml up -d
+   bun run db:generate
+   bun run db:migrate:deploy
+   ```
+
+4. Publish the starters you need using the [template guide](packages/templates/README.md#syncing).
+   Publication builds provider images, writes R2 objects and updates the database;
+   run it explicitly after configuration. It is not part of routine startup.
+
+5. Start the TypeScript services and background workers:
+
+   ```powershell
+   bun run dev
+   ```
+
+6. Start [Python RAG](apps/rag-service/README.md#setup) in a separate terminal, then
+   open `http://localhost:3000`. Root `dev` does not start Python.
+
+For focused work, run an individual app's `dev` script as described in its README.
+The [infrastructure guide](infra/README.md) lists local database addresses and
+Compose lifecycle commands.
+
+## Applications
+
+| App                                         | Responsibility                                              | Default port |
+| ------------------------------------------- | ----------------------------------------------------------- | ------------ |
+| [web](apps/web/README.md)                   | Browser UI and development workspace                        | 3000         |
+| [api-server](apps/api-server/README.md)     | Authentication, projects, authorization and persistent data | 3002         |
+| [ws-server](apps/ws-server/README.md)       | Browser realtime connections and Redis relay                | 3003         |
+| [orchestrator](apps/orchestrator/README.md) | Sandbox files, terminals, previews, Git and snapshots       | 3004         |
+| [rag-service](apps/rag-service/README.md)   | Python code indexing and retrieval with Neo4j               | 3005         |
+| [agent-worker](apps/agent-worker/README.md) | Queued model and tool runs; port serves health checks       | 3006         |
+
+The API also owns separate audit, cleanup, GitHub and notification worker processes
+on health ports 3007–3010. Run one orchestrator and one RAG API process: their
+project coordination currently includes process-local state.
 
 ## Packages
 
-- `packages/typescript-config` — shared `tsconfig.json` bases (`base`, `nextjs`, `vite`, `react-library`, `node-library`).
-- `packages/eslint-config` — shared ESLint 9 flat configs (`base`, `next`, `react-internal`, `node`).
-- `packages/database` — Prisma 7 (driver adapters, `@prisma/adapter-pg`) with a singleton client exported from `@forgeAI/database`.
-- `packages/ui` — shadcn/ui components (`new-york` style) built on `@base-ui/react` + Tailwind v4, exported as `@forgeAI/ui/components/*`.
+| Package                                                       | Responsibility                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------- |
+| [agent](packages/agent/README.md)                             | Model configuration, agent loop, context and retrieval events |
+| [database](packages/database/README.md)                       | Prisma schema, migrations, client and demo seed               |
+| [eslint-config](packages/eslint-config/README.md)             | Shared lint configurations                                    |
+| [jobs](packages/jobs/README.md)                               | Transactional background jobs and BullMQ delivery             |
+| [orchestrator-client](packages/orchestrator-client/README.md) | Typed sandbox HTTP client                                     |
+| [sandbox-provider](packages/sandbox-provider/README.md)       | Sandbox provider interface, E2B adapter and R2 client         |
+| [shared](packages/shared/README.md)                           | Cross-service types, validation and utilities                 |
+| [templates](packages/templates/README.md)                     | Starter projects, image contracts and publication             |
+| [typescript-config](packages/typescript-config/README.md)     | Shared compiler presets                                       |
+| [ui](packages/ui/README.md)                                   | React components and styles                                   |
 
-## Getting started
+## Validation
 
-```bash
-bun install
-cp .env.example .env
-cp .env.example packages/database/.env
-cp .env.example apps/api/.env
-cp apps/api-fast/.env.example apps/api-fast/.env
-cp .env.example apps/web/.env
+From the repository root, after dependency installation and client generation:
+
+```powershell
+bun run typecheck
+bun run lint
+bun run build
 ```
 
-Start Postgres locally:
-
-```bash
-docker compose up -d
-```
-
-Generate the Prisma client, push the schema, and seed some data:
-
-```bash
-bun run db:generate
-bun run db:push
-bun run db:seed
-```
-
-Run everything in dev mode:
-
-```bash
-bun run dev
-```
-
-- web: http://localhost:3000
-- api: http://localhost:3001
-- api-fast: http://localhost:3002
-- docs: http://localhost:3003
-
-## Scripts
-
-| Script                      | What it does                                              |
-| --------------------------- | --------------------------------------------------------- |
-| `bun run build`             | `turbo run build` — builds every app/package              |
-| `bun run dev`               | `turbo run dev` — runs every app/package in watch mode    |
-| `bun run lint`              | `turbo run lint` — ESLint across the repo                 |
-| `bun run typecheck`         | `turbo run typecheck` — `tsc --noEmit` across the repo    |
-| `bun run format`            | `turbo run format` — Prettier                             |
-| `bun run db:generate`       | Regenerate the Prisma client                              |
-| `bun run db:push`           | Push `schema.prisma` to the database (no migration files) |
-| `bun run db:migrate:dev`    | Create and apply a dev migration                          |
-| `bun run db:migrate:deploy` | Apply migrations in production                            |
-| `bun run db:seed`           | Seed the database                                         |
-| `bun run db:studio`         | Open Prisma Studio                                        |
-
-## CLI
-
-```bash
-bun run --cwd apps/cli dev -- --help
-```
-
-## Adding shadcn/ui components
-
-Components live in `packages/ui/src/components` and are consumed as `@forgeAI/ui/components/<name>`:
-
-```bash
-bunx shadcn@latest add <component> -c packages/ui
-```
-
-## Docker
-
-- `docker-compose.yml` — local dev database only (`docker compose up -d`).
-- `docker-compose.prod.yml` — full stack (`db`, `api`, `api-fast`, `web`), each app built from its own `Dockerfile` via `turbo prune --docker`. `DATABASE_URL` for the apps is derived from `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` and points at the `db` service by name (not the root `.env`'s `localhost` value, which only works for host-side `bun dev`):
-
-```bash
-docker compose -f docker-compose.prod.yml up --build
-```
-
-Each app's `Dockerfile` (`apps/web`, `apps/api`, `apps/api-fast`) can also be built standalone; all three prune the workspace to just what that app needs before installing and building.
+Python tests and retrieval evaluations are documented in the
+[RAG README](apps/rag-service/README.md#checks). Model/provider smoke checks and
+template publication contact external services; they are separate from the
+workspace's static checks and builds.
